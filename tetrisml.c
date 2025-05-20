@@ -1,5 +1,5 @@
 #include <stdio.h>
 int main() {
-    printf("I am playing tetris hehehehehehe");
+    printf("I am playing tetris hohoho");
     return 0;
 }
