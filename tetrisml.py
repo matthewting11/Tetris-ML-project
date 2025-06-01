@@ -4,7 +4,7 @@ root = tk.Tk()
 root.title("Blank Window")
 root.geometry("576x632")
 
-canvas = tk.Canvas(root, width=576, height=632, bg="cyan")
+canvas = tk.Canvas(root, width=576, height=632, bg="gray")
 canvas.pack()
 
 block_size = 16
