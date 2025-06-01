@@ -7,13 +7,18 @@ print("hello")
 1 = square - "yellow"
 2 = long bar - "cyan"
 3 = S piece - "green"
-4 = Z piece - "red"
+4 = Z piece - "red" 
 5 = T piece - "purple"
 6 = L piece - "orange"
 7 = J piece - "blue"
 
 landed = 1
 falling = 0
+
+Single: 40 points , multiplied by the level.
+Double: 100 points , multiplied by the level.
+Triple: 300 points , multiplied by the level.
+Tetris: 1,200 points , multiplied by the level
 
 '''
 
