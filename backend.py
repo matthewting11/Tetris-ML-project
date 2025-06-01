@@ -20,10 +20,6 @@ Double: 100 points , multiplied by the level.
 Triple: 300 points , multiplied by the level.
 Tetris: 1,200 points , multiplied by the level
 
-
-landed = 1
-falling = 0
-
 '''
 
 '''
@@ -38,42 +34,42 @@ falling = 0
 
 
 
-board = [[tile() for _ in range(11)] for _ in range(27)]
+board = [[piece() for _ in range(11)] for _ in range(27)]
 
 class tile:
-    def __init__(self,color, filled=False):
+    def __init__(self,color):
         self.color = color
-        self.filled = filled
 
 class piece:
+    def pieceidtoblocks(self):
+        if self.pieceid == 0:
+            return [[0,0]]
+        elif self.pieceid == 1:
+            return [[0, 0], [1, 0], [0, 1], [1, 1]]
+        elif self.pieceid == 2:
+            return [[0, 0], [1, 0], [2, 0], [3, 0]]
+        elif self.pieceid == 3:
+            return [[0, 0], [1, 0], [1, 1], [2, 1]]
+        elif self.pieceid == 4:
+            return [[0, 0], [1, 0], [1, 1], [2, 1]]
+        elif self.pieceid == 5:
+            return [[0, 0], [1, 0], [2, 0], [1, 1]]
+        elif self.pieceid == 6:
+            return [[0, 0], [0, 1], [1, 1], [2, 1]]
+        elif self.pieceid == 7:
+            return [[0, 0], [1, 0], [2, 0], [2, 1]]
+        else:
+            return [] # FALLBACK CASE, SHOULD NOT HAPPEN
+    
     def __init__(self, position,pieceid=0, landed=0):
         self.position = position
         self.pieceid = pieceid
         self.landed = landed
-        self.blocks = pieceidtoblocks(position)
+        self.blocks = pieceidtoblocks()
         self.spawn = [5,25]
         
 
-    # 
-    def pieceidtoblocks(self, position):
-        if pieceid == 0:
-            return [[0,0]]
-        elif pieceid == 1:
-            return [[0, 0], [1, 0], [0, 1], [1, 1]]
-        elif pieceid == 2:
-            return [[0, 0], [1, 0], [2, 0], [3, 0]]
-        elif pieceid == 3:
-            return [[0, 0], [1, 0], [1, 1], [2, 1]]
-        elif pieceid == 4:
-            return [[0, 0], [1, 0], [1, 1], [2, 1]]
-        elif pieceid == 5:
-            return [[0, 0], [1, 0], [2, 0], [1, 1]]
-        elif pieceid == 6:
-            return [[0, 0], [0, 1], [1, 1], [2, 1]]
-        elif pieceid == 7:
-            return [[0, 0], [1, 0], [2, 0], [2, 1]]
-        else:
-            return [] # FALLBACK CASE, SHOULD NOT HAPPEN
+    
 
 
         
