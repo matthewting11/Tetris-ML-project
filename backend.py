@@ -1,6 +1,6 @@
 print("hello")
 
-import numpy as np
+
 
 ''' Logic for backend operations goes here 
 0 = empty
@@ -37,7 +37,7 @@ class tile:
         self.color = color
 
 class piece:
-    def __init__(self, pieceid=0, landed=0,blocks,axisofrevolution ):
+    def __init__(self, pieceid=0, landed=0,blocks = [],axisofrevolution = [0,0] ):
         self.pieceid = pieceid
         self.landed = landed
         self.blocks = blocks
