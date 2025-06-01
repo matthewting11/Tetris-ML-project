@@ -5,13 +5,12 @@ print("hello")
 ''' Logic for backend operations goes here 
 0 = empty
 1 = square - "yellow"
-2 = long bar
-3 = S piece
-4 = Z piece
-5 = T piece
-6 = L piece
-7 = J piece
-8 = T piece
+2 = long bar - "cyan"
+3 = S piece - "green"
+4 = Z piece - "red"
+5 = T piece - "purple"
+6 = L piece - "orange"
+7 = J piece - "blue"
 
 landed = 1
 falling = 0
