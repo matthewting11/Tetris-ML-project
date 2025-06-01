@@ -26,7 +26,7 @@ score_box_x0, score_box_y0 = 20,100
 score_box_x1,score_box_y1 = 180,300
 canvas.create_rectangle(score_box_x0, score_box_y0, score_box_x1,score_box_y1, outline= "white", width=2)
 canvas.create_text((score_box_x0+score_box_x1)/2, score_box_y0 +20, text="Score", fill = "white")
-canvas.create_text((score_box_x0 + score_box_x1)/2, score_box_y0 +60, text=score, fill="white", font = ("Arial",24))
+canvas.create_text((score_box_x0 + score_box_x1)/2, score_box_y0 +60, text=score, fill="white", font = ("Times New Roman",24))
 
 root.mainloop()
 
