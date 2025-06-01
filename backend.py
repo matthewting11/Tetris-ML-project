@@ -59,7 +59,7 @@ class piece:
         elif self.pieceid == 7:
             return [[0, 0], [1, 0], [2, 0], [2, 1]]
         else:
-            return [] # FALLBACK CASE, SHOULD NOT HAPPEN
+            return [[]] # FALLBACK CASE, SHOULD NOT HAPPEN
     
     def __init__(self, position,pieceid=0, landed=0):
         self.position = position
