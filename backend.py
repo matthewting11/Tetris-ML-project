@@ -42,26 +42,28 @@ class piece:
         self.position = position
         self.pieceid = pieceid
         self.landed = landed
-        self.blocks = blocks
+        self.blocks = pieceidtoblocks(position)
         self.axisofrevolution = axisofrevolution
 
-    def pieceidtoblocks(self):
-        if self.pieceid == 0:
+    def pieceidtoblocks(self, position):
+        if position == 0:
             return []
-        elif self.pieceid == 1:
+        elif position == 1:
             return [[0, 0], [1, 0], [0, 1], [1, 1]]
-        elif self.pieceid == 2:
+        elif position == 2:
             return [[0, 0], [1, 0], [2, 0], [3, 0]]
-        elif self.pieceid == 3:
+        elif position == 3:
             return [[0, 0], [1, 0], [1, 1], [2, 1]]
-        elif self.pieceid == 4:
+        elif position == 4:
             return [[0, 0], [1, 0], [1, 1], [2, 1]]
-        elif self.pieceid == 5:
+        elif position == 5:
             return [[0, 0], [1, 0], [2, 0], [1, 1]]
-        elif self.pieceid == 6:
+        elif position == 6:
             return [[0, 0], [0, 1], [1, 1], [2, 1]]
-        elif self.pieceid == 7:
+        elif position == 7:
             return [[0, 0], [1, 0], [2, 0], [2, 1]]
+        else:
+            return [] ' FALLBACK CASE, SHOULD NOT HAPPEN'
 
 
 
