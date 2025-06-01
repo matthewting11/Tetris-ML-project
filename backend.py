@@ -38,33 +38,37 @@ class tile:
         self.filled = filled
 
 class piece:
-    def __init__(self, position,pieceid=0, landed=0,blocks = [],axisofrevolution = [0,0] ):
+    def __init__(self, position,pieceid=0, landed=0):
         self.position = position
         self.pieceid = pieceid
         self.landed = landed
         self.blocks = pieceidtoblocks(position)
-        self.axisofrevolution = axisofrevolution
+        self.spawn = [5,25]
+        
 
+    # 
     def pieceidtoblocks(self, position):
-        if position == 0:
-            return []
-        elif position == 1:
+        if pieceid == 0:
+            return [[0,0]]
+        elif pieceid == 1:
             return [[0, 0], [1, 0], [0, 1], [1, 1]]
-        elif position == 2:
+        elif pieceid == 2:
             return [[0, 0], [1, 0], [2, 0], [3, 0]]
-        elif position == 3:
+        elif pieceid == 3:
             return [[0, 0], [1, 0], [1, 1], [2, 1]]
-        elif position == 4:
+        elif pieceid == 4:
             return [[0, 0], [1, 0], [1, 1], [2, 1]]
-        elif position == 5:
+        elif pieceid == 5:
             return [[0, 0], [1, 0], [2, 0], [1, 1]]
-        elif position == 6:
+        elif pieceid == 6:
             return [[0, 0], [0, 1], [1, 1], [2, 1]]
-        elif position == 7:
+        elif pieceid == 7:
             return [[0, 0], [1, 0], [2, 0], [2, 1]]
         else:
-            return [] ' FALLBACK CASE, SHOULD NOT HAPPEN'
+            return [] # FALLBACK CASE, SHOULD NOT HAPPEN
 
+
+        
 
 
 
