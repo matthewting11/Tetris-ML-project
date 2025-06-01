@@ -4,14 +4,14 @@ print("hello")
 
 ''' Logic for backend operations goes here 
 0 = empty
-1 = square
+1 = square - "yellow"
 2 = long bar
 3 = S piece
 4 = Z piece
 5 = T piece
 6 = L piece
 7 = J piece
-
+8 = T piece
 
 landed = 1
 falling = 0
@@ -30,40 +30,28 @@ falling = 0
 
 
 
-board = [[tile() for _ in range(11)] for _ in range(27)]
+board = [[piece() for _ in range(11)] for _ in range(27)]
 
 class tile:
-    def __init__(self,color, filled=False):
+    def __init__(self,color):
         self.color = color
-        self.filled = filled
 
 class piece:
-    def __init__(self, position,pieceid=0, landed=0,blocks = [],axisofrevolution = [0,0] ):
-        self.position = position
+    def __init__(self, pieceid=0, landed=0,blocks = [],axisofrevolution = [0,0] ):
         self.pieceid = pieceid
         self.landed = landed
-        self.blocks = pieceidtoblocks(position)
+        self.blocks = blocks
         self.axisofrevolution = axisofrevolution
 
-    def pieceidtoblocks(self, position):
-        if position == 0:
+    def pieceidtoblocks(self):
+        if self.pieceid == 0:
             return []
-        elif position == 1:
+        elif self.pieceid == 1:
             return [[0, 0], [1, 0], [0, 1], [1, 1]]
-        elif position == 2:
+        elif self.pieceid == 2:
             return [[0, 0], [1, 0], [2, 0], [3, 0]]
-        elif position == 3:
+        elif self.pieceid == 3:
             return [[0, 0], [1, 0], [1, 1], [2, 1]]
-        elif position == 4:
-            return [[0, 0], [1, 0], [1, 1], [2, 1]]
-        elif position == 5:
-            return [[0, 0], [1, 0], [2, 0], [1, 1]]
-        elif position == 6:
-            return [[0, 0], [0, 1], [1, 1], [2, 1]]
-        elif position == 7:
-            return [[0, 0], [1, 0], [2, 0], [2, 1]]
-        else:
-            return [] ' FALLBACK CASE, SHOULD NOT HAPPEN'
 
 
 
