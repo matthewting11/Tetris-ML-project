@@ -8,14 +8,25 @@ canvas = tk.Canvas(root, width=576, height=632, bg="black")
 canvas.pack()
 
 block_size = 16
-cols = 576 // block_size
-rows = 632 // block_size
+cols = 11
+rows = 27 
+start_x = 200
+start_y = 100
+
 
 def draw_block(x,y,color):
     canvas.create_rectangle(x,y,x+block_size,y+block_size, fill=color, outline="white")
 for row in range(rows):
     for col in range(cols):
-        color = "gray"
-        draw_block(col * block_size, row * block_size, color)
+        x = start_x + col *block_size
+        y = start_y + row *block_size
+        draw_block(x, y, "gray")
+score = 0
+score_box_x0, score_box_y0 = 20,100
+score_box_x1,score_box_y1 = 180,300
+canvas.create_rectangle(score_box_x0, score_box_y0, score_box_x1,score_box_y1, outline= "white", width=2)
+canvas.create_text((score_box_x0+score_box_x1)/2, score_box_y0 +20, text="Score", fill = "white")
+canvas.create_text((score_box_x0 + score_box_x1)/2, score_box_y0 +60, text=score, fill="white", font = ("Times New Roman",24))
 
 root.mainloop()
+
