@@ -4,7 +4,7 @@ root = tk.Tk()
 root.title("Blank Window")
 root.geometry("576x632")
 
-canvas = tk.Canvas(root, width=576, height=632, bg="gray")
+canvas = tk.Canvas(root, width=576, height=632, bg="cyan")
 canvas.pack()
 
 block_size = 16
@@ -22,6 +22,7 @@ for row in range(rows):
         y = start_y + row *block_size
         draw_block(x, y, "black")
 score = 0
+
 score_box_x0, score_box_y0 = 20,100
 score_box_x1,score_box_y1 = 180,300
 canvas.create_rectangle(score_box_x0, score_box_y0, score_box_x1,score_box_y1, outline= "white", width=2)
