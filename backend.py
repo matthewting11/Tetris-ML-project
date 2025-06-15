@@ -12,8 +12,10 @@ import random
 6 = L piece - "orange"
 7 = J piece - "blue"
 
-landed = 1
-falling = 0
+state = 0 -> background tile
+state = 1 -> piece tile, landed
+state = 2 -> piece tile, not landed   
+
 
 Single: 40 points , multiplied by the level.
 Double: 100 points , multiplied by the level.
@@ -28,17 +30,25 @@ Tetris: 1,200 points , multiplied by the level
 
 60fps --> 16.67ms per frame
 
+board: 11x27 of tile objects
+
 
 '''
 
 
 
 
-board = [[piece() for _ in range(11)] for _ in range(27)]
+board = [[tile() for _ in range(11)] for _ in range(27)]
+
+for i in range(27):
+    for j in range(11):
+        print(board[i][j].color, end=' ')
 
 class tile:
-    def __init__(self,color):
+    def __init__(self,color, landed=0):
         self.color = color
+        self.landed = landed
+
 
 def pieeidtoblocks(pieceid):
     if pieceid == 0:
@@ -81,6 +91,7 @@ def center_piece(pieceid):
 
 
 def test_position(board, oldpieceloc, newpieceloc):
+    return True
 
 
 
