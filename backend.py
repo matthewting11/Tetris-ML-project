@@ -1,6 +1,6 @@
 print("hello")
 import random
-
+import tkinter as tk
 
 ''' Logic for backend operations goes here 
 0 = empty
@@ -45,7 +45,7 @@ for i in range(27):
         print(board[i][j].color, end=' ')
 
 class tile:
-    def __init__(self,color = , landed=0):
+    def __init__(self,color = (80,80,80), landed=0):
         self.color = color
         self.landed = landed
 
