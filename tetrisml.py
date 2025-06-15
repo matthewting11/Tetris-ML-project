@@ -16,33 +16,66 @@ start_y = 100
 
 def draw_block(x,y,color):
     canvas.create_rectangle(x,y,x+block_size,y+block_size, fill=color, outline="white")
-for row in range(rows):
-    for col in range(cols):
-        x = start_x + col *block_size
-        y = start_y + row *block_size
-        draw_block(x, y, "black")
+
+def draw_grid():
+        for row in range(rows):
+            for col in range(cols):
+                x = start_x + col *block_size
+                y = start_y + row *block_size
+                draw_block(x, y, "black")
+
+paused = False
 score = 0
 
-score_box_x0, score_box_y0 = 20,100
-score_box_x1,score_box_y1 = 180,300
-canvas.create_rectangle(score_box_x0, score_box_y0, score_box_x1,score_box_y1, outline= "white", width=2)
-canvas.create_text((score_box_x0+score_box_x1)/2, score_box_y0 +20, text="Score", fill = "white")
-canvas.create_text((score_box_x0 + score_box_x1)/2, score_box_y0 +60, text=score, fill="white", font = ("Courier",24))
+def draw_game_UI():
+    
+    #Score box
+    
+    score_box_x0, score_box_y0 = 20,100
+    score_box_x1,score_box_y1 = 180,300
+    canvas.create_rectangle(score_box_x0, score_box_y0, score_box_x1,score_box_y1, outline= "white", width=2)
+    canvas.create_text((score_box_x0+score_box_x1)/2, score_box_y0 +20, text="Score", fill = "white")
+    canvas.create_text((score_box_x0 + score_box_x1)/2, score_box_y0 +60, text=score, fill="white", font = ("Courier",24))
 
-next_box_x0, next_box_y0 = 400,100
-next_box_x1,next_box_y1 = 550,450
+    #Next box
 
-canvas.create_rectangle(next_box_x0, next_box_y0, next_box_x1, next_box_y1, outline= "white", width=2)
-canvas.create_text((next_box_x0+next_box_x1)/2, next_box_y0 +20, text="Next", fill = "white")
+    next_box_x0, next_box_y0 = 400,100
+    next_box_x1,next_box_y1 = 550,450
 
-level_box_x0, level_box_y0 = 20,350
-level_box_x1,level_box_y1 = 180,450
+    canvas.create_rectangle(next_box_x0, next_box_y0, next_box_x1, next_box_y1, outline= "white", width=2)
+    canvas.create_text((next_box_x0+next_box_x1)/2, next_box_y0 +20, text="Next", fill = "white")
 
-level = 1
+    #level box
 
-canvas.create_rectangle(level_box_x0, level_box_y0, level_box_x1, level_box_y1, outline= "white", width=2)
-canvas.create_text((level_box_x0+level_box_x1)/2, level_box_y0 +20, text="Level:", fill = "white")
-canvas.create_text((level_box_x0 + level_box_x1)/2, level_box_y0 +60, text=level, fill="white", font = ("Courier",24))
+    level_box_x0, level_box_y0 = 20,350
+    level_box_x1,level_box_y1 = 180,450
+
+    level = 1
+
+    canvas.create_rectangle(level_box_x0, level_box_y0, level_box_x1, level_box_y1, outline= "white", width=2)
+    canvas.create_text((level_box_x0+level_box_x1)/2, level_box_y0 +20, text="Level:", fill = "white")
+    canvas.create_text((level_box_x0 + level_box_x1)/2, level_box_y0 +60, text=level, fill="white", font = ("Courier",24))
+
+def draw_pause_overlay():
+    canvas.create_rectangle(0,0,576,632, fill="black", stipple="gray25", tags="pause")
+    canvas.create_rectangle(138,241,438,391, outline="white", width=3, fill="gray20", tags="pause")
+    canvas.create_text(288,316, text="Paused", fill="white", font=("Courier",32),tags="pause")
+
+def toggle_pause(event=None):
+    global paused
+    paused = not paused
+    if paused:
+          canvas.delete("all")
+          draw_pause_overlay()
+    else:
+        canvas.delete("all")
+        draw_grid()
+        draw_game_UI()
+
+root.bind("<Escape>", toggle_pause)
+
+draw_grid()
+draw_game_UI()
 
 root.mainloop()
 
