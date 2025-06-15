@@ -80,15 +80,18 @@ def center_piece(pieceid):
     return pivot
 
 
+def test_position(board, oldpieceloc, newpieceloc):
+
+
+
 class piece:
     def __init__(self, position,pieceid=0, landed=0):
         self.position = position
         self.pieceid = pieceid
         self.landed = landed
         self.blocks = pieeidtoblocks(pieceid)
-        self.spawn = [5,25]
+        self.location = [5,25]
         self.pivot = center_piece(pieceid)
-        
     def ccw(self):
         # Rotate the piece counter-clockwise
         new_blocks = []
@@ -97,8 +100,8 @@ class piece:
             new_x = -y + self.pivot[0] + self.pivot[1]
             new_y = x - self.pivot[0] + self.pivot[1]
             new_blocks.append([new_x, new_y])
-        self.blocks = new_blocks
-    
+        #self.blocks = new_blocks
+        return new_blocks
     def cw(self):
         # Rotate the piece clockwise
         new_blocks = []
@@ -107,7 +110,37 @@ class piece:
             new_x = y - self.pivot[0] + self.pivot[1]
             new_y = -x + self.pivot[0] + self.pivot[1]
             new_blocks.append([new_x, new_y])
-        self.blocks = new_blocks
+        #self.blocks = new_blocks
+        return new_blocks
+    def moveblock(self, direction):
+        # Move the piece right
+        #Left = False, Right = True
+        if direction:
+            new_location = [self.location[0]+1, self.location[1]]
+        else:
+            new_location = [self.location[0]-1, self.location[1]]
+        #self.blocks = new_blocks
+        return new_location
+    
+    def get_current_coords(self):
+        current_coords = []
+        for block in self.blocks:
+            x, y = block
+            current_x = x + self.location[0]
+            current_y = y + self.location[1]
+            current_coords.append([current_x, current_y])
+        return current_coords
+    
+    def get_new_coords(self, nl=self.location, nb=self.blocks):
+        new_coords = []
+        for block in nb:
+            x, y = block
+            new_x = x + nl[0]
+            new_y = y + nl[1]
+            new_coords.append([new_x, new_y])
+        return new_coords
+
+    
 
     
 
