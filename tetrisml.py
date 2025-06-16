@@ -35,7 +35,7 @@ cols = 11
 rows = 27 
 start_x = 200
 start_y = 100
-
+tick_speed = 800
 
 
 def start_game():
@@ -106,13 +106,13 @@ def draw_game_UI():
 
 def update_block():
     if not current_piece or paused:
-        root.after(500, update_block)
+        root.after(tick_speed, update_block)
         return
     if not paused:
         for i in range(len(current_piece["blocks"])):
             current_piece["blocks"][i][1] += 1
         update_screen()
-    root.after(500, update_block)
+    root.after(tick_speed, update_block)
 
 
 def update_screen():
@@ -142,7 +142,8 @@ def toggle_pause(event=None):
 
 root.bind("<Escape>", toggle_pause)
 
-root.after(500, update_block)
+
+
 
 root.mainloop()
 
