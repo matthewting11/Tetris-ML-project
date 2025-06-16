@@ -1,4 +1,3 @@
-print("hello")
 import random
 
 
