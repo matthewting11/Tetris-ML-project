@@ -1,5 +1,5 @@
 import random
-import tkinter as tk
+
 
 ''' Logic for backend operations goes here 
 0 = empty
@@ -11,10 +11,8 @@ import tkinter as tk
 6 = L piece - "orange"
 7 = J piece - "blue"
 
-state = 0 -> background tile
-state = 1 -> piece tile, landed
-state = 2 -> piece tile, not landed   
-
+landed = 1
+falling = 0
 
 Single: 40 points , multiplied by the level.
 Double: 100 points , multiplied by the level.
@@ -29,43 +27,35 @@ Tetris: 1,200 points , multiplied by the level
 
 60fps --> 16.67ms per frame
 
-board: 11x27 of tile objects
-
 
 '''
 
 
 
 
-board = [[tile() for _ in range(11)] for _ in range(27)]
-
-for i in range(27):
-    for j in range(11):
-        print(board[i][j].color, end=' ')
+board = [[piece() for _ in range(11)] for _ in range(27)]
 
 class tile:
-    def __init__(self,color = (80,80,80), landed=0):
+    def __init__(self,color):
         self.color = color
-        self.landed = landed
 
-
-def pieeidtoblocks(pieceid):
+def pieceidtoblocks(pieceid):
     if pieceid == 0:
         return [[0,0]]
     elif pieceid == 1:
-        return [[0, 0], [1, 0], [0, 1], [1, 1]]
+        return [[0, 0], [1, 0], [0, 1], [1, 1]] #Square
     elif pieceid == 2:
-        return [[0, 0], [1, 0], [2, 0], [3, 0]]
+        return [[-1, 0], [0, 0], [1, 0], [2, 0]] #Long
     elif pieceid == 3:
-        return [[0, 0], [1, 0], [1, 1], [2, 1]]
+        return [[0, 0], [1, 0], [-1, 1], [0, 1]] #S
     elif pieceid == 4:
-        return [[0, 0], [1, 0], [1, 1], [2, 1]]
+        return [[-1, 0], [0, 1], [0, 0], [1, 1]] #Z
     elif pieceid == 5:
-        return [[0, 0], [1, 0], [2, 0], [1, 1]]
+        return [[0, 1], [-1, 1], [1, 1], [0, 0]] #T
     elif pieceid == 6:
-        return [[0, 0], [0, 1], [1, 1], [2, 1]]
+        return [[-1, 0], [-1, 1], [0, 1], [1, 1]] #L
     elif pieceid == 7:
-        return [[0, 0], [1, 0], [2, 0], [2, 1]]
+        return [[-1, 0], [0, 0], [1, 0], [1, 1]] #J
     else:
         return [[]] # FALLBACK CASE, SHOULD NOT HAPPEN
 
@@ -90,7 +80,6 @@ def center_piece(pieceid):
 
 
 def test_position(board, oldpieceloc, newpieceloc):
-    return True
 
 
 
