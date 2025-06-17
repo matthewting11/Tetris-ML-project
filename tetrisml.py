@@ -48,7 +48,7 @@ def center_piece(pieceid):
     if pieceid == 1:   # O-tetromino
         pivot = (0.5, 0.5)
     elif pieceid == 2:  # I-tetromino
-        pivot = (0.5, 0.5)
+        pivot = (0.5, 0)
     elif pieceid in (3, 4, 5, 7):  # S, Z, T, J
         pivot = (0, 0.5)
     elif pieceid == 6:  # L (or mirror; note: some implementations may choose a different pivot)
@@ -62,6 +62,8 @@ def center_piece(pieceid):
     return pivot
 
 
+
+
 #DEFINING CLASSES
 class piece:
     def __init__(self, pieceid=0, landed=0):
@@ -72,6 +74,19 @@ class piece:
         self.pivot = center_piece(pieceid)
         self.location = [5,0]
 
+    def can_rotate(self, rotated_blocks, cols, rows):
+        for x,y in rotated_blocks:
+            if x < left_bound:
+                print(x,"is less than",left_bound)
+                return False
+            if x > right_bound:
+                print(x,"is more than",right_bound)
+                return False
+            if y > bottom_bound:
+                print(y, "is lower than",bottom_bound)
+                return False
+        return True
+
     def ccw(self):
         # Rotate the piece counter-clockwise
         new_blocks = []
@@ -80,18 +95,48 @@ class piece:
             new_x = -y + self.pivot[0] + self.pivot[0]
             new_y = x - self.pivot[1] + self.pivot[1]
             new_blocks.append([new_x, new_y])
-        self.blocks = new_blocks
+        if self.can_rotate(new_blocks, cols, rows):
+            self.blocks = new_blocks
 
-    
+
     def cw(self):
         # Rotate the piece clockwise
         new_blocks = []
         for block in self.blocks:
             x, y = block
-            new_x = y - self.pivot[0] + self.pivot[1]
-            new_y = -x + self.pivot[0] + self.pivot[1]
+            new_x = y - self.pivot[0] + self.pivot[0]
+            new_y = -x + self.pivot[1] + self.pivot[1]
             new_blocks.append([new_x, new_y])
+        if self.can_rotate(new_blocks, cols, rows):
+            self.blocks = new_blocks
+
+    def l(self):
+        for x,y in self.blocks:
+            if x-1 < -6:
+                return
+        new_blocks = []
+        for block in self.blocks:
+            x,y = block
+            new_x = x-1
+            new_blocks.append([new_x,y])
         self.blocks = new_blocks
+        self.location[0] -= 1
+        pivot_x,pivot_y = self.pivot
+        self.pivot = (pivot_x - 1, pivot_y)
+
+    def r(self):
+        for x,y in self.blocks:
+            if x+1 >= 4:
+                return
+        new_blocks = []
+        for block in self.blocks:
+            x,y = block
+            new_x = x+1
+            new_blocks.append([new_x,y])
+        self.blocks = new_blocks
+        self.location[0] += 1
+        pivot_x,pivot_y = self.pivot
+        self.pivot = (pivot_x + 1, pivot_y)
 
 
 block_size = 16
@@ -101,6 +146,11 @@ start_x = 200
 start_y = 100
 tick_speed = 800
 
+#DEFINE BORDERS
+left_bound = -cols // 2
+right_bound = cols // 2
+bottom_bound = 84
+
 #STARTING GAME
 
 def start_game():
@@ -108,7 +158,7 @@ def start_game():
     paused = False
     start_button.destroy()
     
-    random_piece_id = 2 #random.randint(1,7)
+    random_piece_id = 2#random.randint(1,7)
     current_piece = piece(pieceid=random_piece_id)
     
     draw_grid()
@@ -192,6 +242,11 @@ def update_screen():
         return
     if current_piece:
         draw_piece()
+        pivot_x,pivot_y = current_piece.pivot
+        current_piece.pivot = (pivot_x, pivot_y+1)
+        print(current_piece.location)
+        print(current_piece.blocks)
+        #print(current_piece.pivot)
 
 # SETUP PAUSE SYSTEM
 def toggle_pause(event=None):
@@ -206,15 +261,32 @@ def toggle_pause(event=None):
         canvas.delete("pause")
         update_screen()
 
-#SETTING UP ROTATION FUNCTION
-def rotate_piece(event=None):
+#SETTING UP MOVEMENT FUNCTION
+def rotate_piece_CCW(event=None):
     if not paused and current_piece:
         current_piece.ccw()
         update_screen()
+def rotate_piece_CW(event=None):
+    if not paused and current_piece:
+        current_piece.cw()
+        update_screen()
+def moveblock_L(self):
+    if not paused and current_piece:
+        current_piece.l()
+        update_screen()
+def moveblock_R(self):
+    if not paused and current_piece:
+        current_piece.r()
+        update_screen()
+
+
+
 
 root.bind("<Escape>", toggle_pause)
-root.bind("<Up>",rotate_piece)
-
+root.bind("<Up>",rotate_piece_CCW)
+root.bind("<Down>",rotate_piece_CW)
+root.bind("<Left>",moveblock_L)
+root.bind("<Right>",moveblock_R)
 
 
 
