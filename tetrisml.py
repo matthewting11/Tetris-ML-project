@@ -8,7 +8,7 @@ root.geometry("576x632")
 canvas = tk.Canvas(root, width=576, height=632, bg="gray")
 canvas.pack()
 
-current_piece = None
+
 
 def pieceidtoblocks(pieceid):
     if pieceid == 0:
@@ -29,7 +29,71 @@ def pieceidtoblocks(pieceid):
         return [[-1, 0], [0, 0], [1, 0], [1, 1]] #J
     else:
         return [[]] # FALLBACK CASE, SHOULD NOT HAPPEN
+def piece_color(pieceid):
+    colors = {
+        0: "gray",
+        1: "yellow",
+        2: "cyan",
+        3: "red",
+        4: "green",
+        5: "purple",
+        6: "orange",
+        7: "blue"
+    }
+    return colors.get(pieceid,"gray")
+#DEFINE ROTATION AXIS
+def center_piece(pieceid):
+    # Define the pivot for each piece.
+    # (These are one acceptable set of pivot points for classic Tetris.)
+    if pieceid == 1:   # O-tetromino
+        pivot = (0.5, 0.5)
+    elif pieceid == 2:  # I-tetromino
+        pivot = (0.5, 0.5)
+    elif pieceid in (3, 4, 5, 7):  # S, Z, T, J
+        pivot = (0, 0.5)
+    elif pieceid == 6:  # L (or mirror; note: some implementations may choose a different pivot)
+        pivot = (0, 0.5)
+    elif pieceid == 0:  
+        pivot = (0, 0)
+    else:
+        raise ValueError("Unknown piece")
     
+    # Return the pivot point as a tuple (x, y). 
+    return pivot
+
+
+#DEFINING CLASSES
+class piece:
+    def __init__(self, pieceid=0, landed=0):
+        self.pieceid = pieceid
+        self.landed = landed
+        self.color = piece_color(pieceid)
+        self.blocks = pieceidtoblocks(pieceid)
+        self.pivot = center_piece(pieceid)
+        self.location = [5,0]
+
+    def ccw(self):
+        # Rotate the piece counter-clockwise
+        new_blocks = []
+        for block in self.blocks:
+            x, y = block
+            new_x = -y + self.pivot[0] + self.pivot[0]
+            new_y = x - self.pivot[1] + self.pivot[1]
+            new_blocks.append([new_x, new_y])
+        self.blocks = new_blocks
+
+    
+    def cw(self):
+        # Rotate the piece clockwise
+        new_blocks = []
+        for block in self.blocks:
+            x, y = block
+            new_x = y - self.pivot[0] + self.pivot[1]
+            new_y = -x + self.pivot[0] + self.pivot[1]
+            new_blocks.append([new_x, new_y])
+        self.blocks = new_blocks
+
+
 block_size = 16
 cols = 11
 rows = 27 
@@ -37,24 +101,21 @@ start_x = 200
 start_y = 100
 tick_speed = 800
 
+#STARTING GAME
 
 def start_game():
-    global paused, start_button, current_piece
+    global paused, start_button,current_piece
     paused = False
     start_button.destroy()
     
-    random_piece_id = random.randint(1,7)
-    center_col = cols//2
-    current_piece = {
-    "blocks": [[center_col+ dx, dy] for dx, dy in pieceidtoblocks(random_piece_id)],
-    "color": "cyan"
-    }
-
-
+    random_piece_id = 2 #random.randint(1,7)
+    current_piece = piece(pieceid=random_piece_id)
+    
     draw_grid()
     draw_game_UI()
     update_screen()
     update_block()
+
 
 start_button = tk.Button(root, text="Start Game", font=("Courier", 16), command=start_game)
 canvas.create_window(288,316, window=start_button)
@@ -64,6 +125,8 @@ paused = False
 score = 0
 level = 1
 block = {"x":5, "y":0}
+
+#SETTING UI
 
 def draw_block(x,y,color):
     canvas.create_rectangle(x,y,x+block_size,y+block_size, fill=color, outline="white")
@@ -104,16 +167,22 @@ def draw_game_UI():
     canvas.create_text((level_box_x0+level_box_x1)/2, level_box_y0 +20, text="Level:", fill = "white")
     canvas.create_text((level_box_x0 + level_box_x1)/2, level_box_y0 +60, text=level, fill="white", font = ("Courier",24))
 
+#SETTING BLOCK TICK MOVEMENT
+
 def update_block():
     if not current_piece or paused:
         root.after(tick_speed, update_block)
         return
-    if not paused:
-        for i in range(len(current_piece["blocks"])):
-            current_piece["blocks"][i][1] += 1
-        update_screen()
+
+    current_piece.location[1] += 1
+    update_screen()
     root.after(tick_speed, update_block)
 
+def draw_piece():
+    for dx,dy in current_piece.blocks:
+        x = start_x + (current_piece.location[0]+dx)*block_size
+        y = start_y + (current_piece.location[1]+dy)*block_size
+        draw_block(x,y,current_piece.color)
 
 def update_screen():
     canvas.delete("all")
@@ -122,11 +191,9 @@ def update_screen():
     if not current_piece:
         return
     if current_piece:
-        for dx,dy in current_piece["blocks"]:
-            x = start_x + dx*block_size
-            y = start_y + dy*block_size
-            draw_block(x,y,current_piece["color"])
+        draw_piece()
 
+# SETUP PAUSE SYSTEM
 def toggle_pause(event=None):
     global paused
     paused = not paused
@@ -139,8 +206,14 @@ def toggle_pause(event=None):
         canvas.delete("pause")
         update_screen()
 
+#SETTING UP ROTATION FUNCTION
+def rotate_piece(event=None):
+    if not paused and current_piece:
+        current_piece.ccw()
+        update_screen()
 
 root.bind("<Escape>", toggle_pause)
+root.bind("<Up>",rotate_piece)
 
 
 
