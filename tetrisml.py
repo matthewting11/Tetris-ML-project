@@ -48,11 +48,13 @@ def center_piece(pieceid):
     if pieceid == 1:   # O-tetromino
         pivot = (0.5, 0.5)
     elif pieceid == 2:  # I-tetromino
-        pivot = (1, 0)
-    elif pieceid in (3, 4, 5, 7):  # S, Z, T, J
-        pivot = (0, 0.5)
+        pivot = (1.5, 0.5)
+    elif pieceid in (3, 4, 5):  # S, Z, T
+        pivot = (0, 1)
     elif pieceid == 6:  # L (or mirror; note: some implementations may choose a different pivot)
-        pivot = (0, 0.5)
+        pivot = (0, 1)
+    elif pieceid == 7:
+        pivot = (0,0)
     elif pieceid == 0:  
         pivot = (0, 0)
     else:
@@ -74,7 +76,7 @@ class piece:
         self.pivot = center_piece(pieceid)
         self.location = [5,0]
 
-    def can_rotate(self, rotated_blocks, cols, rows):
+    def can_rotate(self, rotated_blocks):
         for x,y in rotated_blocks:
             if x < left_bound:
                 print(x,"is less than",left_bound)
@@ -88,30 +90,31 @@ class piece:
         return True
 
     def ccw(self):
-        new_blocks = []
-        px, py = self.pivot
-        for x, y in self.blocks:
-            rel_x = x - px
-            rel_y = y - py
-            rot_x = -rel_y
-            rot_y = rel_x
-            new_x = rot_x + px
-            new_y = rot_y + py
-            new_blocks.append([new_x, new_y])
-        if self.can_rotate(new_blocks, cols, rows):
+        # Rotate the piece counter-clockwise
+        if self.can_rotate():
+            new_blocks = []
+            for block in self.blocks:
+                x, y = block
+                new_x = y - self.pivot[1] + self.pivot[0]
+                new_y = -x + self.pivot[0] + self.pivot[1]
+                new_blocks.append([new_x, new_y])
             self.blocks = new_blocks
-
-
+            return new_blocks
+        else:
+            return self.blocks
     def cw(self):
         # Rotate the piece clockwise
-        new_blocks = []
-        for block in self.blocks:
-            x, y = block
-            new_x = y - self.pivot[0] + self.pivot[0]
-            new_y = -x + self.pivot[1] + self.pivot[1]
-            new_blocks.append([new_x, new_y])
-        if self.can_rotate(new_blocks, cols, rows):
+        if self.can_rotate():
+            new_blocks = []
+            for block in self.blocks:
+                x, y = block
+                new_x = -y + self.pivot[0] + self.pivot[1]
+                new_y = x - self.pivot[0] + self.pivot[1]
+                new_blocks.append([new_x, new_y])
             self.blocks = new_blocks
+            return new_blocks
+        else:
+            return self.blocks
 
     def l(self):
         for x,y in self.blocks:
@@ -120,12 +123,12 @@ class piece:
         new_blocks = []
         for block in self.blocks:
             x,y = block
-            new_x = x-1
+            new_x = x
             new_blocks.append([new_x,y])
         self.blocks = new_blocks
         self.location[0] -= 1
         pivot_x,pivot_y = self.pivot
-        self.pivot = (pivot_x - 1, pivot_y)
+        self.pivot = (pivot_x, pivot_y)
 
     def r(self):
         for x,y in self.blocks:
@@ -134,12 +137,12 @@ class piece:
         new_blocks = []
         for block in self.blocks:
             x,y = block
-            new_x = x+1
+            new_x = x
             new_blocks.append([new_x,y])
         self.blocks = new_blocks
         self.location[0] += 1
         pivot_x,pivot_y = self.pivot
-        self.pivot = (pivot_x + 1, pivot_y)
+        self.pivot = (pivot_x, pivot_y)
 
 
 block_size = 16
@@ -161,7 +164,7 @@ def start_game():
     paused = False
     start_button.destroy()
     
-    random_piece_id = 2#random.randint(1,7)
+    random_piece_id = 7#random.randint(1,7)
     current_piece = piece(pieceid=random_piece_id)
     
     draw_grid()
@@ -296,8 +299,8 @@ def moveblock_R(self):
 
 
 root.bind("<Escape>", toggle_pause)
-root.bind("<Up>",rotate_piece_CCW)
-root.bind("<Down>",rotate_piece_CW)
+root.bind("<z>",rotate_piece_CCW)
+root.bind("<Up>",rotate_piece_CW)
 root.bind("<Left>",moveblock_L)
 root.bind("<Right>",moveblock_R)
 
