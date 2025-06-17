@@ -48,7 +48,7 @@ def center_piece(pieceid):
     if pieceid == 1:   # O-tetromino
         pivot = (0.5, 0.5)
     elif pieceid == 2:  # I-tetromino
-        pivot = (0.5, 0)
+        pivot = (1, 0)
     elif pieceid in (3, 4, 5, 7):  # S, Z, T, J
         pivot = (0, 0.5)
     elif pieceid == 6:  # L (or mirror; note: some implementations may choose a different pivot)
@@ -88,12 +88,15 @@ class piece:
         return True
 
     def ccw(self):
-        # Rotate the piece counter-clockwise
         new_blocks = []
-        for block in self.blocks:
-            x, y = block
-            new_x = -y + self.pivot[0] + self.pivot[0]
-            new_y = x - self.pivot[1] + self.pivot[1]
+        px, py = self.pivot
+        for x, y in self.blocks:
+            rel_x = x - px
+            rel_y = y - py
+            rot_x = -rel_y
+            rot_y = rel_x
+            new_x = rot_x + px
+            new_y = rot_y + py
             new_blocks.append([new_x, new_y])
         if self.can_rotate(new_blocks, cols, rows):
             self.blocks = new_blocks
@@ -233,7 +236,19 @@ def draw_piece():
         x = start_x + (current_piece.location[0]+dx)*block_size
         y = start_y + (current_piece.location[1]+dy)*block_size
         draw_block(x,y,current_piece.color)
+    # Draw pivot point as a small yellow circle
+    pivot_x = current_piece.location[0] + current_piece.pivot[0]
+    pivot_y = current_piece.location[1] + current_piece.pivot[1]
 
+    # Convert grid coordinates to pixel
+    px = start_x + pivot_x * block_size
+    py = start_y + pivot_y * block_size
+    radius = block_size // 4
+    canvas.create_oval(
+        px - radius, py - radius,
+        px + radius, py + radius,
+        fill="yellow", outline=""
+    )
 def update_screen():
     canvas.delete("all")
     draw_grid()
@@ -242,11 +257,9 @@ def update_screen():
         return
     if current_piece:
         draw_piece()
-        pivot_x,pivot_y = current_piece.pivot
-        current_piece.pivot = (pivot_x, pivot_y+1)
-        print(current_piece.location)
-        print(current_piece.blocks)
-        #print(current_piece.pivot)
+        print("location at",current_piece.location)
+        #print(current_piece.blocks)
+        print("pivot at", current_piece.pivot)
 
 # SETUP PAUSE SYSTEM
 def toggle_pause(event=None):
