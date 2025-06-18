@@ -25,7 +25,7 @@ def pieceidtoblocks(pieceid):
     elif pieceid == 5:
         return [[0, 1], [-1, 1], [1, 1], [0, 0]] #T
     elif pieceid == 6:
-        return [[-1, 0], [-1, 1], [0, 1], [1, 1]] #L
+        return [[1, 0], [-1, 1], [0, 1], [1, 1]] #L
     elif pieceid == 7:
         return [[-1, 0], [0, 0], [1, 0], [1, 1]] #J
     else:
@@ -81,13 +81,15 @@ class piece:
     def can_move_left(self,new_blocks):
         for x,y in new_blocks:
             boundx = x + self.location[0]
-            if boundx<=0:
+            boundy = y + self.location[1]
+            if boundx<=0 or board[int(boundy)][int(boundx-1)] is not None:
                 return False
         return True
     def can_move_right(self,new_blocks):
         for x,y in new_blocks:
             boundx = x + self.location[0]
-            if boundx>=10:
+            boundy = y + self.location[1]
+            if boundx>=10 or board[int(boundy)][int(boundx+1)] is not None:
                 return False
         return True
     def can_rotate(self,new_blocks):
@@ -180,13 +182,24 @@ class piece:
         else:
             return self.blocks
     def hard(self):
+        global points_added, score
         #harddrop block on lowest possible level:
         if paused or current_piece is None:
             return
-        while current_piece.can_move_down():
-            current_piece[1]+=1
+        for x,y in self.blocks:
+            new_blocks = []
+        for block in self.blocks:
+            x,y = block
+            new_y = y
+            new_blocks.append([x,new_y])
+        while current_piece.can_move_down(new_blocks):
+            current_piece.blocks = new_blocks
+            current_piece.location[1]+=1
         current_piece.landed = True
         current_piece.fix_piece()
+        clear_lines()
+        score += points_added
+        root.after(100,update_block)
         spawn_new_piece()
         update_screen()
         
@@ -197,6 +210,8 @@ class piece:
             row = int(dy + offset_y)
             if 0 <= row < rows and 0 <= col < cols:
                 board[row][col] = self.color
+        
+
 
 block_size = 16
 cols = 11
@@ -213,7 +228,7 @@ bottom_bound = 84
 #STARTING GAME
 running = True
 def start_game():
-    global paused, start_button,current_piece
+    global paused, start_button,current_piece, board
     paused = False
     start_button.destroy()
     
@@ -226,10 +241,6 @@ def start_game():
     update_block()
 
     
-
-
-
-
 controls = [
     "← / → arrow keys : Move L/R",
     "↓ arrow key : Soft Drop",
@@ -255,7 +266,7 @@ def draw_block(x,y,color):
     canvas.create_rectangle(x, y, x + block_size, y + block_size, fill=color, outline="white")
 
 def draw_grid():
-        for row in range(rows):
+        for row in range(-1,rows):
             for col in range(cols):
                 x = start_x + col *block_size
                 y = start_y + row *block_size
@@ -293,8 +304,7 @@ def draw_game_UI():
 #SETTING BLOCK TICK MOVEMENT
 
 def update_block():
-    global current_piece
-    
+    global current_piece, board, score
     if not paused:
         new_blocks = []
         for block in current_piece.blocks:
@@ -320,16 +330,19 @@ def update_block():
                 current_piece.landed = True
                 print("fixed")
                 current_piece.fix_piece()
+                clear_lines()
+                score+=points_added
                 spawn_new_piece()
             root.after(100,update_block)
             print(float(time.time()) - float(current_piece.lock_time))
+            
     else:
         print("lol")
         return
 
 def spawn_new_piece():
     global current_piece
-    random_piece_id = random.randint(1,7)
+    random_piece_id = 2#(random.randint(1,7)
     current_piece = piece(pieceid = random_piece_id)
     update_screen()
 
@@ -354,6 +367,36 @@ def draw_piece():
         fill="yellow", outline=""
     )
     '''
+
+def clear_lines():
+    global board
+    global points_added
+    print("clearing lines")
+    new_board = []
+    for row in board:
+        full = True
+        for cell in row:
+            if cell is None:
+                full = False
+                break
+        if not full:
+            new_board.append(row)
+    lines_cleared = rows - len(new_board)
+    for _ in range(lines_cleared):
+        new_board.insert(0,[None for _ in range(cols)])
+    board = new_board
+    print("cleared",lines_cleared)
+    points_added = 0
+    if lines_cleared == 1:
+        points_added = 40
+    elif lines_cleared == 2:
+        points_added = 100
+    elif lines_cleared == 3:
+        points_added = 300
+    elif lines_cleared == 4:
+        points_added = 1200
+    return points_added
+
 def update_screen():
     canvas.delete("all")
     draw_grid()
