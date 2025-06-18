@@ -75,60 +75,70 @@ class piece:
         self.blocks = pieceidtoblocks(pieceid)
         self.pivot = center_piece(pieceid)
         self.location = [5,0]
-
-    def can_rotate(self, rotated_blocks):
-        for x,y in rotated_blocks:
-            if x < left_bound:
-                print(x,"is less than",left_bound)
+    
+    def can_move_left(self,new_blocks):
+        print(new_blocks)
+        for x,y in new_blocks:
+            boundx = x + self.location[0]
+            if boundx<=0:
                 return False
-            if x > right_bound:
-                print(x,"is more than",right_bound)
+        return True
+    def can_move_right(self,new_blocks):
+        for x,y in new_blocks:
+            boundx = x + self.location[0]
+            if boundx>=10:
                 return False
-            if y > bottom_bound:
-                print(y, "is lower than",bottom_bound)
+        return True
+    def can_rotate_CCW(self,new_blocks):
+        for x,y in new_blocks:
+            boundx = x + self.location[0]
+            if boundx>=10:
                 return False
         return True
 
     def ccw(self):
         # Rotate the piece counter-clockwise
-        if self.can_rotate():
-            new_blocks = []
-            for block in self.blocks:
-                x, y = block
-                new_x = y - self.pivot[1] + self.pivot[0]
-                new_y = -x + self.pivot[0] + self.pivot[1]
-                new_blocks.append([new_x, new_y])
+         # Please pass in the whatever "rotated_blocks" is because it's missing an argument 
+        new_blocks = []
+        for block in self.blocks:
+            x, y = block
+            new_x = y - self.pivot[1] + self.pivot[0]
+            new_y = -x + self.pivot[0] + self.pivot[1]
+            new_blocks.append([new_x, new_y])
+            
+        if self.is_within_bounds(self,new_blocks):
             self.blocks = new_blocks
             return new_blocks
         else:
             return self.blocks
     def cw(self):
         # Rotate the piece clockwise
-        if self.can_rotate():
-            new_blocks = []
-            for block in self.blocks:
-                x, y = block
-                new_x = -y + self.pivot[0] + self.pivot[1]
-                new_y = x - self.pivot[0] + self.pivot[1]
-                new_blocks.append([new_x, new_y])
+        new_blocks = []
+        for block in self.blocks:
+            x, y = block
+            new_x = -y + self.pivot[0] + self.pivot[1]
+            new_y = x - self.pivot[0] + self.pivot[1]
+            new_blocks.append([new_x, new_y])
+            print(new_blocks)
+        if self.is_within_bounds(new_blocks):
             self.blocks = new_blocks
-            return new_blocks
+            return self.blocks
         else:
             return self.blocks
 
     def l(self):
-        for x,y in self.blocks:
-            if x-1 < -6:
-                return
         new_blocks = []
         for block in self.blocks:
             x,y = block
             new_x = x
             new_blocks.append([new_x,y])
-        self.blocks = new_blocks
-        self.location[0] -= 1
-        pivot_x,pivot_y = self.pivot
-        self.pivot = (pivot_x, pivot_y)
+        if self.can_move_left(new_blocks):
+            self.blocks = new_blocks
+            self.location[0] -= 1
+            return self.blocks
+        else:
+            return self.blocks
+
 
     def r(self):
         for x,y in self.blocks:
@@ -139,10 +149,12 @@ class piece:
             x,y = block
             new_x = x
             new_blocks.append([new_x,y])
-        self.blocks = new_blocks
-        self.location[0] += 1
-        pivot_x,pivot_y = self.pivot
-        self.pivot = (pivot_x, pivot_y)
+        if self.can_move_right(new_blocks):    
+            self.blocks = new_blocks
+            self.location[0] += 1
+            return self.blocks
+        else:
+            return self.blocks
 
 
 block_size = 16
@@ -164,7 +176,7 @@ def start_game():
     paused = False
     start_button.destroy()
     
-    random_piece_id = 7#random.randint(1,7)
+    random_piece_id = 3#random.randint(1,7)
     current_piece = piece(pieceid=random_piece_id)
     
     draw_grid()
@@ -185,7 +197,7 @@ block = {"x":5, "y":0}
 #SETTING UI
 
 def draw_block(x,y,color):
-    canvas.create_rectangle(x,y,x+block_size,y+block_size, fill=color, outline="white")
+    canvas.create_rectangle(x, y, x + block_size, y + block_size, fill=color, outline="white")
 
 def draw_grid():
         for row in range(rows):
@@ -261,8 +273,7 @@ def update_screen():
     if current_piece:
         draw_piece()
         print("location at",current_piece.location)
-        #print(current_piece.blocks)
-        print("pivot at", current_piece.pivot)
+
 
 # SETUP PAUSE SYSTEM
 def toggle_pause(event=None):
