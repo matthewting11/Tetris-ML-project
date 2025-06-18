@@ -71,15 +71,14 @@ def center_piece(pieceid):
 class piece:
     def __init__(self, pieceid=0, landed=0):
         self.pieceid = pieceid
-        self.landed = landed
+        self.landed = False
         self.color = piece_color(pieceid)
         self.blocks = pieceidtoblocks(pieceid)
         self.pivot = center_piece(pieceid)
         self.location = [5,0]
-        self.lock_time = None
+        self.lock_time = 0
     
     def can_move_left(self,new_blocks):
-        print(new_blocks)
         for x,y in new_blocks:
             boundx = x + self.location[0]
             if boundx<=0:
@@ -129,7 +128,6 @@ class piece:
             new_x = -y + self.pivot[0] + self.pivot[1]
             new_y = x - self.pivot[0] + self.pivot[1]
             new_blocks.append([new_x, new_y])
-            print(new_blocks)
         if self.can_rotate(new_blocks):
             self.blocks = new_blocks
             return self.blocks
@@ -181,6 +179,14 @@ class piece:
             return self.blocks
         else:
             return self.blocks
+        
+    def fix_piece(self):
+        offset_x, offset_y = self.location  # piece's position on the grid
+        for dx, dy in self.blocks:
+            col = int(dx + offset_x)
+            row = int(dy + offset_y)
+            if 0 <= row < rows and 0 <= col < cols:
+                board[row][col] = "white"
 
 block_size = 16
 cols = 11
@@ -195,7 +201,7 @@ right_bound = cols // 2
 bottom_bound = 84
 
 #STARTING GAME
-
+running = True
 def start_game():
     global paused, start_button,current_piece
     paused = False
@@ -205,9 +211,12 @@ def start_game():
     current_piece = piece(pieceid=random_piece_id)
     
     draw_grid()
-    draw_game_UI()
+    draw_game_UI()    
     update_screen()
     update_block()
+
+    
+
 
 
 
@@ -276,30 +285,44 @@ def draw_game_UI():
 def update_block():
     global current_piece
     
-    if not current_piece or paused:
-        root.after(tick_speed, update_block)
-        return
-    if not current_piece.landed():
-        if current_piece.can_move_down(current_piece):
+    if not paused:
+        new_blocks = []
+        for block in current_piece.blocks:
+            x,y = block
+            new_blocks.append([x,y])
+
+        if current_piece.can_move_down(new_blocks)== True:
+            current_piece.blocks = new_blocks
             current_piece.location[1] += 1
             update_screen()
             root.after(tick_speed, update_block)
-            current_piece.lock_time = None
+            current_piece.lock_time = 0
         
+        elif current_piece.can_move_down(new_blocks) == False :
+            
+            print("cant move")
+            
+            if current_piece.lock_time == 0:
+                current_piece.lock_time = time.time()
+                print("fixing")
+            
+            elif float(time.time()) - float(current_piece.lock_time) >= 0.8:
+                current_piece.landed = True
+                print("fixed")
+                current_piece.fix_piece()
+                spawn_new_piece()
+            root.after(tick_speed,update_block)
+            float(time.time()) - float(current_piece.lock_time)
     else:
-        if current_piece.lock_time is None:
-            current_piece.lock_time = time.time()
-        elif time.time() - current_piece.lock_time > 1:
-            current_piece.landed = True
+        print("lol")
+        return
 
-def fix_piece():
-    for x,y in piece.blocks:
-        if 0 <= x < cols and 0 <=y <rows:
-            board[y][x] = piece.color
 def spawn_new_piece():
     global current_piece
     random_piece_id = random.randint(1,7)
     current_piece = piece(pieceid = random_piece_id)
+    update_block()
+    update_screen()
 
 def draw_piece():
     for dx,dy in current_piece.blocks:
@@ -326,11 +349,15 @@ def update_screen():
     canvas.delete("all")
     draw_grid()
     draw_game_UI()
-    if not current_piece:
-        return
+    for row in range(rows):
+        for col in range(cols):
+            color = board[row][col]
+            if color:
+                x = start_x + col * block_size
+                y = start_y + row * block_size
+                draw_block(x,y,color)
     if current_piece:
         draw_piece()
-        print("location at",current_piece.location)
 
 
 # SETUP PAUSE SYSTEM
@@ -365,22 +392,27 @@ def draw_controls_menu(screen, font, title= "Controls"):
 def rotate_piece_CCW(event=None):
     if not paused and current_piece:
         current_piece.ccw()
+        current_piece.lock_time = 0
         update_screen()
 def rotate_piece_CW(event=None):
     if not paused and current_piece:
         current_piece.cw()
+        current_piece.lock_time = 0
         update_screen()
 def moveblock_L(self):
     if not paused and current_piece:
         current_piece.l()
+        current_piece.lock_time = 0
         update_screen()
 def moveblock_R(self):
     if not paused and current_piece:
         current_piece.r()
+        current_piece.lock_time = 0
         update_screen()
 def softdrop(self):
     if not paused and current_piece:
         current_piece.soft()
+        current_piece.lock_time = 0
         update_screen()
 
 
