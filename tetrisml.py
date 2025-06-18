@@ -89,10 +89,10 @@ class piece:
             if boundx>=10:
                 return False
         return True
-    def can_rotate_CCW(self,new_blocks):
+    def can_rotate(self,new_blocks):
         for x,y in new_blocks:
             boundx = x + self.location[0]
-            if boundx>=10:
+            if boundx>=11 or boundx<=-1:
                 return False
         return True
 
@@ -106,7 +106,7 @@ class piece:
             new_y = -x + self.pivot[0] + self.pivot[1]
             new_blocks.append([new_x, new_y])
             
-        if self.is_within_bounds(self,new_blocks):
+        if self.can_rotate(new_blocks):
             self.blocks = new_blocks
             return new_blocks
         else:
@@ -120,13 +120,14 @@ class piece:
             new_y = x - self.pivot[0] + self.pivot[1]
             new_blocks.append([new_x, new_y])
             print(new_blocks)
-        if self.is_within_bounds(new_blocks):
+        if self.can_rotate(new_blocks):
             self.blocks = new_blocks
             return self.blocks
         else:
             return self.blocks
 
     def l(self):
+        #Move blocks left
         new_blocks = []
         for block in self.blocks:
             x,y = block
@@ -141,6 +142,7 @@ class piece:
 
 
     def r(self):
+        #Move blocks right
         for x,y in self.blocks:
             if x+1 >= 4:
                 return
@@ -176,7 +178,7 @@ def start_game():
     paused = False
     start_button.destroy()
     
-    random_piece_id = 3#random.randint(1,7)
+    random_piece_id = random.randint(1,7)
     current_piece = piece(pieceid=random_piece_id)
     
     draw_grid()
