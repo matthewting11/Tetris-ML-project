@@ -1,14 +1,15 @@
 import tkinter as tk
 import random
+import time
 
 root = tk.Tk()
 root.title("Tetris Game")
 root.geometry("576x632")
 
-canvas = tk.Canvas(root, width=576, height=632, bg="gray")
+canvas = tk.Canvas(root, width=576, height=632, bg="black")
 canvas.pack()
 
-
+board = [[None for _ in range(11)] for _ in range(27)]
 
 def pieceidtoblocks(pieceid):
     if pieceid == 0:
@@ -31,14 +32,14 @@ def pieceidtoblocks(pieceid):
         return [[]] # FALLBACK CASE, SHOULD NOT HAPPEN
 def piece_color(pieceid):
     colors = {
-        0: "gray",
+        0: "lightgray",
         1: "yellow",
         2: "cyan",
         3: "red",
-        4: "green",
+        4: "lightgreen",
         5: "purple",
         6: "orange",
-        7: "blue"
+        7: "lightblue"
     }
     return colors.get(pieceid,"gray")
 #DEFINE ROTATION AXIS
@@ -75,6 +76,7 @@ class piece:
         self.blocks = pieceidtoblocks(pieceid)
         self.pivot = center_piece(pieceid)
         self.location = [5,0]
+        self.lock_time = None
     
     def can_move_left(self,new_blocks):
         print(new_blocks)
@@ -92,7 +94,15 @@ class piece:
     def can_rotate(self,new_blocks):
         for x,y in new_blocks:
             boundx = x + self.location[0]
-            if boundx>=11 or boundx<=-1:
+            boundy = y + self.location[1]
+            if boundx>=11 or boundx<=-1 or boundy>=26:
+                return False
+        return True
+    def can_move_down(self,new_blocks):
+        for x,y in new_blocks:
+            boundy = y + self.location[1]
+            new_y = y + 1
+            if boundy>=26 or board[new_y][x] is not None:
                 return False
         return True
 
@@ -157,7 +167,20 @@ class piece:
             return self.blocks
         else:
             return self.blocks
-
+    def soft(self):
+        #softdrop block down a space (hold to drop faster):
+        for x,y in self.blocks:
+            new_blocks = []
+        for block in self.blocks:
+            x,y = block
+            new_y = y
+            new_blocks.append([x,new_y])
+        if self.can_move_down(new_blocks):
+            self.blocks = new_blocks
+            self.location[1] += 1
+            return self.blocks
+        else:
+            return self.blocks
 
 block_size = 16
 cols = 11
@@ -187,9 +210,20 @@ def start_game():
     update_block()
 
 
-start_button = tk.Button(root, text="Start Game", font=("Courier", 16), command=start_game)
-canvas.create_window(288,316, window=start_button)
 
+controls = [
+    "← / → arrow keys : Move L/R",
+    "↓ arrow key : Soft Drop",
+    "Space-bar : Hard drop",
+    "↑ : Rotate CW",
+    "Z : Rotate CCW",
+    "Esc : Pause"
+   ]    
+for i, line in enumerate(controls):
+    canvas.create_text(288, 300 + i*20, text=line, fill="white", font=("Courier",12),tags="Pause")
+
+start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
+canvas.create_window(288,150, window=start_button)
 
 paused = False
 score = 0
@@ -240,13 +274,32 @@ def draw_game_UI():
 #SETTING BLOCK TICK MOVEMENT
 
 def update_block():
+    global current_piece
+    
     if not current_piece or paused:
         root.after(tick_speed, update_block)
         return
+    if not current_piece.landed():
+        if current_piece.can_move_down(current_piece):
+            current_piece.location[1] += 1
+            update_screen()
+            root.after(tick_speed, update_block)
+            current_piece.lock_time = None
+        
+    else:
+        if current_piece.lock_time is None:
+            current_piece.lock_time = time.time()
+        elif time.time() - current_piece.lock_time > 1:
+            current_piece.landed = True
 
-    current_piece.location[1] += 1
-    update_screen()
-    root.after(tick_speed, update_block)
+def fix_piece():
+    for x,y in piece.blocks:
+        if 0 <= x < cols and 0 <=y <rows:
+            board[y][x] = piece.color
+def spawn_new_piece():
+    global current_piece
+    random_piece_id = random.randint(1,7)
+    current_piece = piece(pieceid = random_piece_id)
 
 def draw_piece():
     for dx,dy in current_piece.blocks:
@@ -261,11 +314,14 @@ def draw_piece():
     px = start_x + pivot_x * block_size
     py = start_y + pivot_y * block_size
     radius = block_size // 4
+    #Marked pivot point
+    '''
     canvas.create_oval(
         px - radius, py - radius,
         px + radius, py + radius,
         fill="yellow", outline=""
     )
+    '''
 def update_screen():
     canvas.delete("all")
     draw_grid()
@@ -286,9 +342,24 @@ def toggle_pause(event=None):
         canvas.create_rectangle(0,0,576,632, fill="black", stipple="gray25", tags="pause")
         canvas.create_rectangle(138,241,438,391, outline="white", width=3, fill="gray20", tags="pause")
         canvas.create_text(288,316, text="Paused", fill="white", font=("Courier",32),tags="pause")
+
+        controls = [
+            "← / → arrow keys : Move L/R",
+            "↓ arrow key : Soft Drop",
+            "Space-bar : Hard drop",
+            "↑ : Rotate CW",
+            "Z : Rotate CCW",
+            "Esc : Pause"
+        ]
+        for i, line in enumerate(controls):
+            canvas.create_text(288, 400 + i*20, text=line, fill="lightgray", font=("Courier",12),tags="Pause")
+
     else:
         canvas.delete("pause")
         update_screen()
+# CONTROLS MENU
+def draw_controls_menu(screen, font, title= "Controls"):
+    screen.fill
 
 #SETTING UP MOVEMENT FUNCTION
 def rotate_piece_CCW(event=None):
@@ -307,6 +378,11 @@ def moveblock_R(self):
     if not paused and current_piece:
         current_piece.r()
         update_screen()
+def softdrop(self):
+    if not paused and current_piece:
+        current_piece.soft()
+        update_screen()
+
 
 
 
@@ -316,6 +392,7 @@ root.bind("<z>",rotate_piece_CCW)
 root.bind("<Up>",rotate_piece_CW)
 root.bind("<Left>",moveblock_L)
 root.bind("<Right>",moveblock_R)
+root.bind("<Down>",softdrop)
 
 
 
