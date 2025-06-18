@@ -99,9 +99,9 @@ class piece:
         return True
     def can_move_down(self,new_blocks):
         for x,y in new_blocks:
-            boundy = y + self.location[1]
-            new_y = y + 1
-            if boundy>=26 or board[new_y][x] is not None:
+            absx = int(x+self.location[0])
+            absy= int(y + self.location[1])
+            if absy>=26 or board[int(absy)+1][int(absx)] is not None:
                 return False
         return True
 
@@ -179,6 +179,16 @@ class piece:
             return self.blocks
         else:
             return self.blocks
+    def hard(self):
+        #harddrop block on lowest possible level:
+        if paused or current_piece is None:
+            return
+        while current_piece.can_move_down():
+            current_piece[1]+=1
+        current_piece.landed = True
+        current_piece.fix_piece()
+        spawn_new_piece()
+        update_screen()
         
     def fix_piece(self):
         offset_x, offset_y = self.location  # piece's position on the grid
@@ -186,7 +196,7 @@ class piece:
             col = int(dx + offset_x)
             row = int(dy + offset_y)
             if 0 <= row < rows and 0 <= col < cols:
-                board[row][col] = "white"
+                board[row][col] = self.color
 
 block_size = 16
 cols = 11
@@ -306,13 +316,13 @@ def update_block():
                 current_piece.lock_time = time.time()
                 print("fixing")
             
-            elif float(time.time()) - float(current_piece.lock_time) >= 0.8:
+            elif float(time.time()) - float(current_piece.lock_time) >= 0.5:
                 current_piece.landed = True
                 print("fixed")
                 current_piece.fix_piece()
                 spawn_new_piece()
-            root.after(tick_speed,update_block)
-            float(time.time()) - float(current_piece.lock_time)
+            root.after(100,update_block)
+            print(float(time.time()) - float(current_piece.lock_time))
     else:
         print("lol")
         return
@@ -321,7 +331,6 @@ def spawn_new_piece():
     global current_piece
     random_piece_id = random.randint(1,7)
     current_piece = piece(pieceid = random_piece_id)
-    update_block()
     update_screen()
 
 def draw_piece():
@@ -414,7 +423,11 @@ def softdrop(self):
         current_piece.soft()
         current_piece.lock_time = 0
         update_screen()
-
+def harddrop(self):
+    if not paused and current_piece:
+        current_piece.hard()
+        current_piece.lock_time = 0
+        update_screen()
 
 
 
@@ -425,6 +438,7 @@ root.bind("<Up>",rotate_piece_CW)
 root.bind("<Left>",moveblock_L)
 root.bind("<Right>",moveblock_R)
 root.bind("<Down>",softdrop)
+root.bind("<space>",harddrop)
 
 
 
