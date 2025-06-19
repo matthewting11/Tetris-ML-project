@@ -9,7 +9,7 @@ root.geometry("576x632")
 canvas = tk.Canvas(root, width=576, height=632, bg="black")
 canvas.pack()
 
-board = [[None for _ in range(11)] for _ in range(27)]
+board = [[None for _ in range(11)] for _ in range(29)]
 
 def pieceidtoblocks(pieceid):
     if pieceid == 0:
@@ -96,7 +96,7 @@ class piece:
         for x,y in new_blocks:
             boundx = x + self.location[0]
             boundy = y + self.location[1]
-            if boundx>=11 or boundx<=-1 or boundy>=26:
+            if boundx>=11 or boundx<=-1 or boundy>=26 or board[int(boundy)][int(boundx)] is not None:
                 return False
         return True
     def can_move_down(self,new_blocks):
@@ -199,9 +199,9 @@ class piece:
         current_piece.fix_piece()
         clear_lines()
         score += points_added
-        root.after(100,update_block)
-        spawn_new_piece()
         update_screen()
+        spawn_new_piece()
+
         
     def fix_piece(self):
         offset_x, offset_y = self.location  # piece's position on the grid
@@ -219,11 +219,27 @@ rows = 27
 start_x = 200
 start_y = 100
 tick_speed = 800
+speeds = [ 720, 630, 550, 470, 380, 300, 220, 130, 100,
+    80,  70,  50,  30,  20,  17]
+def get_tick_speed(level):
+    return speeds[min(level-1,len(speeds)-1)]
+
+paused = False
+score = 0
+total_lines_cleared = 0
+level = 1
+block = {"x":5, "y":0}
+
 
 #DEFINE BORDERS
 left_bound = -cols // 2
 right_bound = cols // 2
 bottom_bound = 84
+
+
+
+#NEXT QUEUE
+next_queue = [random.randint(1,7) for _ in range(3)]
 
 #STARTING GAME
 running = True
@@ -232,6 +248,8 @@ def start_game():
     paused = False
     start_button.destroy()
     
+    canvas.delete("all")
+
     random_piece_id = random.randint(1,7)
     current_piece = piece(pieceid=random_piece_id)
     
@@ -255,10 +273,7 @@ for i, line in enumerate(controls):
 start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
 canvas.create_window(288,150, window=start_button)
 
-paused = False
-score = 0
-level = 1
-block = {"x":5, "y":0}
+
 
 #SETTING UI
 
@@ -266,7 +281,7 @@ def draw_block(x,y,color):
     canvas.create_rectangle(x, y, x + block_size, y + block_size, fill=color, outline="white")
 
 def draw_grid():
-        for row in range(-1,rows):
+        for row in range(-2,rows):
             for col in range(cols):
                 x = start_x + col *block_size
                 y = start_y + row *block_size
@@ -274,76 +289,90 @@ def draw_grid():
 
 
 def draw_game_UI():
-    
+    global total_lines_cleared,score,level
     #Score box
     
-    score_box_x0, score_box_y0 = 20,100
-    score_box_x1,score_box_y1 = 180,300
-    
-    canvas.create_rectangle(score_box_x0, score_box_y0, score_box_x1,score_box_y1, outline= "white", width=2)
-    canvas.create_text((score_box_x0+score_box_x1)/2, score_box_y0 +20, text="Score", fill = "white")
-    canvas.create_text((score_box_x0 + score_box_x1)/2, score_box_y0 +60, text=score, fill="white", font = ("Courier",24))
+    score_box_x0, score_box_y0 = 20, 100
+    score_box_x1, score_box_y1 = 180, 300
 
-    #Next box
+    canvas.create_rectangle(score_box_x0, score_box_y0, score_box_x1, score_box_y1, outline="white", width=2)
+    canvas.create_text((score_box_x0 + score_box_x1) / 2, score_box_y0 + 20, text="Score", fill="white")
+    canvas.create_text((score_box_x0 + score_box_x1) / 2, score_box_y0 + 60, text=score, fill="white", font=("Courier", 24))
 
-    next_box_x0, next_box_y0 = 400,100
-    next_box_x1,next_box_y1 = 550,450
+    # Lines cleared
+    canvas.create_text((score_box_x0 + score_box_x1) / 2, score_box_y0 + 120, text="Lines", fill="white")
+    canvas.create_text((score_box_x0 + score_box_x1) / 2, score_box_y0 + 160, text=total_lines_cleared, fill="white", font=("Courier", 24))
 
-    canvas.create_rectangle(next_box_x0, next_box_y0, next_box_x1, next_box_y1, outline= "white", width=2)
-    canvas.create_text((next_box_x0+next_box_x1)/2, next_box_y0 +20, text="Next", fill = "white")
+    # Next box
+    next_box_x0, next_box_y0 = 400, 100
+    next_box_x1, next_box_y1 = 550, 450
 
-    #level box
+    canvas.create_rectangle(next_box_x0, next_box_y0, next_box_x1, next_box_y1, outline="white", width=2)
+    canvas.create_text((next_box_x0 + next_box_x1) / 2, next_box_y0 + 20, text="Next", fill="white")
 
-    level_box_x0, level_box_y0 = 20,350
-    level_box_x1,level_box_y1 = 180,450
+    # Level box
+    level_box_x0, level_box_y0 = 20, 350
+    level_box_x1, level_box_y1 = 180, 450
 
-    canvas.create_rectangle(level_box_x0, level_box_y0, level_box_x1, level_box_y1, outline= "white", width=2)
-    canvas.create_text((level_box_x0+level_box_x1)/2, level_box_y0 +20, text="Level:", fill = "white")
-    canvas.create_text((level_box_x0 + level_box_x1)/2, level_box_y0 +60, text=level, fill="white", font = ("Courier",24))
+    canvas.create_rectangle(level_box_x0, level_box_y0, level_box_x1, level_box_y1, outline="white", width=2)
+    canvas.create_text((level_box_x0 + level_box_x1) / 2, level_box_y0 + 20, text="Level:", fill="white")
+    canvas.create_text((level_box_x0 + level_box_x1) / 2, level_box_y0 + 60, text=level, fill="white", font=("Courier", 24))
+
+    draw_next_queue()
 
 #SETTING BLOCK TICK MOVEMENT
 
 def update_block():
-    global current_piece, board, score
+    global current_piece, board, score, tick_speed, level
     if not paused:
         new_blocks = []
         for block in current_piece.blocks:
             x,y = block
             new_blocks.append([x,y])
-
+        tick_speed = get_tick_speed(level)
         if current_piece.can_move_down(new_blocks)== True:
             current_piece.blocks = new_blocks
             current_piece.location[1] += 1
             update_screen()
+        
             root.after(tick_speed, update_block)
             current_piece.lock_time = 0
         
         elif current_piece.can_move_down(new_blocks) == False :
-            
-            print("cant move")
-            
+                
             if current_piece.lock_time == 0:
                 current_piece.lock_time = time.time()
-                print("fixing")
-            
-            elif float(time.time()) - float(current_piece.lock_time) >= 0.5:
+            elif float(time.time()) - float(current_piece.lock_time) >= tick_speed/1000:
                 current_piece.landed = True
-                print("fixed")
                 current_piece.fix_piece()
                 clear_lines()
                 score+=points_added
                 spawn_new_piece()
-            root.after(100,update_block)
-            print(float(time.time()) - float(current_piece.lock_time))
-            
+            update_screen()
+            root.after(tick_speed,update_block)
     else:
         print("lol")
         return
 
+def draw_next_queue():
+    x_offset = 450 + block_size
+    y_offset = 150
+
+    for i, piece_id in enumerate(next_queue):
+        blocks = pieceidtoblocks(piece_id)
+        color = piece_color(piece_id)
+        for dx,dy in blocks:
+            x = x_offset + dx*block_size
+            y = y_offset + dy*block_size + i * 4 *block_size
+            draw_block(x, y, color)
+
+
+
 def spawn_new_piece():
-    global current_piece
-    random_piece_id = random.randint(1,7)
-    current_piece = piece(pieceid = random_piece_id)
+    global current_piece, next_queue
+    piece_id = next_queue.pop(0)
+    current_piece = piece(pieceid = piece_id)
+    next_queue.append(random.randint(1,7))
     update_screen()
 
 def draw_piece():
@@ -369,32 +398,38 @@ def draw_piece():
     '''
 
 def clear_lines():
-    global board
-    global points_added
-    print("clearing lines")
+    global board, level, total_lines_cleared, points_added, score, tick_speed
     new_board = []
-    for row in board:
-        full = True
-        for cell in row:
-            if cell is None:
-                full = False
-                break
-        if not full:
-            new_board.append(row)
-    lines_cleared = rows - len(new_board)
-    for _ in range(lines_cleared):
-        new_board.insert(0,[None for _ in range(cols)])
-    board = new_board
-    print("cleared",lines_cleared)
+    lines_cleared = 0
     points_added = 0
+
+    for row in board:
+        if all(cell is not None for cell in row):
+            lines_cleared += 1  # Full row, will be cleared
+        else:
+            new_board.append(row)
+
+    # Add empty rows at the top for each cleared line
+    for _ in range(lines_cleared):
+        new_board.insert(0, [None for _ in range(cols)])
+
+    board = new_board
+
+    # Update totals and scoring
+    total_lines_cleared += lines_cleared
+    level = 1 + total_lines_cleared // 10
+
     if lines_cleared == 1:
-        points_added = 40
+        points_added = 40 * level
     elif lines_cleared == 2:
-        points_added = 100
+        points_added = 100 * level
     elif lines_cleared == 3:
-        points_added = 300
+        points_added = 300 * level
     elif lines_cleared == 4:
-        points_added = 1200
+        points_added = 1200 * level
+    
+    tick_speed = get_tick_speed
+
     return points_added
 
 def update_screen():
@@ -431,14 +466,12 @@ def toggle_pause(event=None):
             "Esc : Pause"
         ]
         for i, line in enumerate(controls):
-            canvas.create_text(288, 400 + i*20, text=line, fill="lightgray", font=("Courier",12),tags="Pause")
+            canvas.create_text(288, 450 + i*20, text=line, fill="lightgray", font=("Courier",12),tags="Pause")
 
     else:
         canvas.delete("pause")
         update_screen()
-# CONTROLS MENU
-def draw_controls_menu(screen, font, title= "Controls"):
-    screen.fill
+
 
 #SETTING UP MOVEMENT FUNCTION
 def rotate_piece_CCW(event=None):
