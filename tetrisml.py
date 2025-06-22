@@ -65,7 +65,38 @@ def center_piece(pieceid):
     return pivot
 
 
+"""
+DOCUMENTATION BECAUSE WE ARE NOT ANIMALS
 
+MAIN Loop:
+1. Initialize the game board and UI.
+2. Create a new piece and draw the grid.
+3. Handle user input for piece movement and rotation.
+4. Update the piece position based on user input and game logic.
+5. Check for line clears and update the score.
+6. Redraw the game board and pieces.
+7. Repeat the loop until the game is over or paused.
+
+The functions called in the main loop are:
+- `start_game()`: Initializes the game, spawns the first piece, and sets up the UI.
+- `draw_grid()`: Draws the game grid on the canvas.
+
+Main Loop:
+- `draw_game_UI()`: Draws the score, lines cleared, next piece, and level information on the canvas.    
+- `update_block()`: Updates the position of the current piece based on game logic and user input.
+
+- `draw_piece()`: Draws the current piece on the canvas.
+- `clear_lines()`: Checks for full lines, clears them, updates the score, and adjusts the game level.
+-
+`update_screen()`: Redraws the entire game screen, including the grid, pieces, and UI elements.
+    Calls   `draw_grid()`
+            `draw_game_UI()`
+            `draw_piece()` 
+
+
+
+
+"""
 
 #DEFINING CLASSES
 class piece:
@@ -78,6 +109,13 @@ class piece:
         self.location = [5,0]
         self.lock_time = 0
     
+    def game_over_check(self):
+        if self.landed:
+            for x,y in self.blocks:
+                if y + self.location[1] <= 4:
+                    return True
+        return False
+
     def can_move_left(self,new_blocks):
         for x,y in new_blocks:
             boundx = x + self.location[0]
@@ -196,6 +234,10 @@ class piece:
             current_piece.blocks = new_blocks
             current_piece.location[1]+=1
         current_piece.landed = True
+        if current_piece.game_over_check():  # Check if the game is over
+            draw_game_over()
+            running = False
+            return  # Exit without spawning a new piece
         current_piece.fix_piece()
         clear_lines()
         score += points_added
@@ -320,6 +362,23 @@ def draw_game_UI():
 
     draw_next_queue()
 
+def draw_game_over():
+    canvas.delete("all")
+    #draw_grid()
+    #draw_game_UI()
+    #for row in range(rows):
+    #    for col in range(cols):
+    #        color = board[row][col]
+    #        if color:
+    #            x = start_x + col * block_size
+    #            y = start_y + row * block_size
+    #            draw_block(x, y, color)
+    canvas.create_rectangle(138, 241, 438, 391, outline="white", width=3, fill="gray20")
+    canvas.create_text(288, 286, text="Game Over", fill="white", font=("Courier", 32))
+    canvas.create_text(288, 326, text=f"Score: {score}", fill="white", font=("Courier", 16))
+    retry_button = tk.Button(root, text="Retry", cursor="hand2", font=("Courier", 16), bg="#444444", fg="white", relief="raised", command=reset_game)
+    canvas.create_window(288, 356, window=retry_button)
+
 #SETTING BLOCK TICK MOVEMENT
 
 def update_block():
@@ -344,6 +403,10 @@ def update_block():
                 current_piece.lock_time = time.time()
             elif float(time.time()) - float(current_piece.lock_time) >= tick_speed/1000:
                 current_piece.landed = True
+                if current_piece.game_over_check():  # Check if the game is over
+                    draw_game_over()
+                    running = False
+                    return  # Exit without spawning a new piece
                 current_piece.fix_piece()
                 clear_lines()
                 score+=points_added
@@ -368,11 +431,21 @@ def draw_next_queue():
 
 
 
+#def spawn_new_piece():
+#    global current_piece, next_queue
+#    piece_id = next_queue.pop(0)
+#    current_piece = piece(pieceid = piece_id)
+#    next_queue.append(random.randint(1,7))
+#    update_screen()
+
 def spawn_new_piece():
-    global current_piece, next_queue
+    global current_piece, next_queue, running
+    
+
+    # If no game over, proceed to spawn a new piece
     piece_id = next_queue.pop(0)
-    current_piece = piece(pieceid = piece_id)
-    next_queue.append(random.randint(1,7))
+    current_piece = piece(pieceid=piece_id)
+    next_queue.append(random.randint(1, 7))
     update_screen()
 
 def draw_piece():
@@ -505,7 +578,19 @@ def harddrop(self):
         current_piece.lock_time = 0
         update_screen()
 
-
+# Function to reset the game state  
+def reset_game():
+    global board, score, total_lines_cleared, level, next_queue, current_piece, running, tick_speed
+    board = [[None for _ in range(11)] for _ in range(29)]
+    score = 0
+    total_lines_cleared = 0
+    level = 1
+    next_queue = [random.randint(1,7) for _ in range(3)]
+    current_piece = None
+    running = True
+    tick_speed = 800
+    canvas.delete("all")
+    start_game()
 
 
 root.bind("<Escape>", toggle_pause)
