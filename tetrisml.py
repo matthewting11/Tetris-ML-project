@@ -138,10 +138,22 @@ class piece:
                 return False
         return True
     def can_move_down(self,new_blocks):
+        global score, points_added
         for x,y in new_blocks:
             absx = int(x+self.location[0])
             absy= int(y + self.location[1])
             if absy>=26 or board[int(absy)+1][int(absx)] is not None:
+                print("cant move down")
+                if current_piece.game_over_check():  # Check if the game is over
+                    draw_game_over()
+                    running = False
+                    return  # Exit without spawning a new piece
+                current_piece.landed = True
+                current_piece.fix_piece()
+                update_screen()            
+                clear_lines()
+                score += points_added
+                spawn_new_piece()
                 return False
         return True
 
@@ -188,7 +200,6 @@ class piece:
         else:
             return self.blocks
 
-
     def r(self):
         #Move blocks right
         for x,y in self.blocks:
@@ -205,6 +216,7 @@ class piece:
             return self.blocks
         else:
             return self.blocks
+    
     def soft(self):
         #softdrop block down a space (hold to drop faster):
         for x,y in self.blocks:
@@ -218,7 +230,22 @@ class piece:
             self.location[1] += 1
             return self.blocks
         else:
-            return self.blocks
+            global points_added, score
+            print("landing")
+            current_piece.landed = True
+            current_piece.fix_piece()
+   
+            if current_piece.game_over_check():  # Check if the game is over
+                draw_game_over()
+                running = False
+                return
+            
+            clear_lines()
+            score += points_added
+            update_screen()
+            spawn_new_piece()
+            
+
     def hard(self):
         global points_added, score
         #harddrop block on lowest possible level:
@@ -246,6 +273,7 @@ class piece:
 
         
     def fix_piece(self):
+        print("fixing")
         offset_x, offset_y = self.location  # piece's position on the grid
         for dx, dy in self.blocks:
             col = int(dx + offset_x)
@@ -411,8 +439,8 @@ def update_block():
                 clear_lines()
                 score+=points_added
                 spawn_new_piece()
-            update_screen()
-            root.after(tick_speed,update_block)
+                update_screen()
+                root.after(tick_speed,update_block)
     else:
         print("lol")
         return
@@ -439,7 +467,7 @@ def draw_next_queue():
 #    update_screen()
 
 def spawn_new_piece():
-    global current_piece, next_queue, running
+    global current_piece, next_queue, running, tick_speed
     
 
     # If no game over, proceed to spawn a new piece
