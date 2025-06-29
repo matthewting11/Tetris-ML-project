@@ -141,19 +141,13 @@ class piece:
         global score, points_added
         for x,y in new_blocks:
             absx = int(x+self.location[0])
-            absy= int(y + self.location[1])
-            if absy>=26 or board[int(absy)+1][int(absx)] is not None:
+            absy = int(y+self.location[1])
+            if absy>=25 or board[int(absy)+1][int(absx)] is not None:
                 print("cant move down")
                 if current_piece.game_over_check():  # Check if the game is over
                     draw_game_over()
                     running = False
                     return  # Exit without spawning a new piece
-                current_piece.landed = True
-                current_piece.fix_piece()
-                update_screen()            
-                clear_lines()
-                score += points_added
-                spawn_new_piece()
                 return False
         return True
 
@@ -226,24 +220,16 @@ class piece:
             new_y = y
             new_blocks.append([x,new_y])
         if self.can_move_down(new_blocks):
+            print("accessing if it can move down")
             self.blocks = new_blocks
             self.location[1] += 1
             return self.blocks
         else:
-            global points_added, score
-            print("landing")
-            current_piece.landed = True
-            current_piece.fix_piece()
-   
+            return self.blocks
             if current_piece.game_over_check():  # Check if the game is over
                 draw_game_over()
                 running = False
                 return
-            
-            clear_lines()
-            score += points_added
-            update_screen()
-            spawn_new_piece()
             
 
     def hard(self):
@@ -271,7 +257,6 @@ class piece:
         update_screen()
         spawn_new_piece()
 
-        
     def fix_piece(self):
         print("fixing")
         offset_x, offset_y = self.location  # piece's position on the grid
@@ -280,12 +265,12 @@ class piece:
             row = int(dy + offset_y)
             if 0 <= row < rows and 0 <= col < cols:
                 board[row][col] = self.color
-        
+        update_screen()
 
 
 block_size = 16
 cols = 11
-rows = 27 
+rows = 26 
 start_x = 200
 start_y = 100
 tick_speed = 800
@@ -416,20 +401,22 @@ def update_block():
         for block in current_piece.blocks:
             x,y = block
             new_blocks.append([x,y])
-        tick_speed = get_tick_speed(level)
+        tick_speed = int(get_tick_speed(level))
         if current_piece.can_move_down(new_blocks)== True:
             current_piece.blocks = new_blocks
             current_piece.location[1] += 1
+            print("block is at",current_piece.location[0],current_piece.location[1])
             update_screen()
         
             root.after(tick_speed, update_block)
             current_piece.lock_time = 0
         
         elif current_piece.can_move_down(new_blocks) == False :
-                
+            print("ass")
             if current_piece.lock_time == 0:
                 current_piece.lock_time = time.time()
             elif float(time.time()) - float(current_piece.lock_time) >= tick_speed/1000:
+                print("pp")
                 current_piece.landed = True
                 if current_piece.game_over_check():  # Check if the game is over
                     draw_game_over()
@@ -438,9 +425,10 @@ def update_block():
                 current_piece.fix_piece()
                 clear_lines()
                 score+=points_added
+                print("done")
                 spawn_new_piece()
                 update_screen()
-                root.after(tick_speed,update_block)
+            root.after(tick_speed,update_block)
     else:
         print("lol")
         return
