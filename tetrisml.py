@@ -620,8 +620,8 @@ root.bind("<Down>",softdrop)
 root.bind("<space>",harddrop)
 
 
-
-root.mainloop()
+if __name__ == "__main__":
+    root.mainloop()
 
 def board_to_boolean(board):
     """

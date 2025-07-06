@@ -1,11 +1,8 @@
-# tetris_simulation.py
 import random
-from copy import deepcopy
-
 from tetrisml import pieceidtoblocks, piece_color, center_piece
 
 class Piece:
-    def __init__(self, pieceid=0, location=(5,0)):
+    def __init__(self, pieceid=0, location=(5, 0)):
         self.pieceid = pieceid
         self.blocks = pieceidtoblocks(pieceid)
         self.pivot = center_piece(pieceid)
@@ -19,6 +16,9 @@ class Piece:
             abs_blocks.append((x, y))
         return abs_blocks
 
+    def rotated_blocks(self):
+        return [(-dy, dx) for dx, dy in self.blocks]
+
 class TetrisSimulation:
     def __init__(self, cols=11, rows=26):
         self.cols = cols
@@ -26,41 +26,38 @@ class TetrisSimulation:
         self.board = [[None for _ in range(cols)] for _ in range(rows)]
         self.score = 0
         self.lines_cleared = 0
+        self.game_over = False
         self.piece = None
+        self.moves = []
         self.spawn_new_piece()
-        self.moves = []  # For replay
 
     def spawn_new_piece(self):
         pieceid = random.randint(1, 7)
         self.piece = Piece(pieceid)
 
-    def valid_position(self, blocks):
-        for x, y in blocks:
+    def valid_position(self, abs_blocks):
+        for x, y in abs_blocks:
             if x < 0 or x >= self.cols or y >= self.rows:
                 return False
-            if y >= 0 and self.board[y][x] is not None:
+            if y >= 0 and self.board[y][x]:
                 return False
         return True
 
     def move(self, dx):
-        new_location = [self.piece.location[0] + dx, self.piece.location[1]]
-        new_blocks = [(x+dx, y) for (x,y) in self.piece.blocks]
-        if self.valid_position([(x, y+self.piece.location[1]) for x,y in self.piece.blocks]):
-            self.piece.location[0] += dx
+        self.piece.location[0] += dx
+        if not self.valid_position(self.piece.get_absolute_blocks()):
+            self.piece.location[0] -= dx
 
     def rotate(self):
-        new_blocks = []
-        for dx, dy in self.piece.blocks:
-            new_x = -dy
-            new_y = dx
-            new_blocks.append((new_x, new_y))
-        if self.valid_position([(self.piece.location[0]+x, self.piece.location[1]+y) for x,y in new_blocks]):
+        new_blocks = self.piece.rotated_blocks()
+        abs_blocks = [(self.piece.location[0]+x, self.piece.location[1]+y) for x,y in new_blocks]
+        if self.valid_position(abs_blocks):
             self.piece.blocks = new_blocks
 
     def drop_one(self):
         self.piece.location[1] += 1
         if not self.valid_position(self.piece.get_absolute_blocks()):
-            self.piece.location[1] -=1
+            self.piece.location[1] -= 1
             self.lock_piece()
             return False
         return True
@@ -70,8 +67,8 @@ class TetrisSimulation:
             pass
 
     def lock_piece(self):
-        for x,y in self.piece.get_absolute_blocks():
-            if y<0:
+        for x, y in self.piece.get_absolute_blocks():
+            if y < 0:
                 self.game_over = True
                 return
             self.board[y][x] = True
@@ -97,24 +94,23 @@ class TetrisSimulation:
 
     def step(self, action):
         """
-        Action:
-            "left"
-            "right"
-            "rotate"
-            "drop"
-            "nothing"
+        action: 'left', 'right', 'rotate', 'drop', 'nothing'
         """
-        if action == "left":
+        if action == 'left':
             self.move(-1)
-        elif action == "right":
+        elif action == 'right':
             self.move(1)
-        elif action == "rotate":
+        elif action == 'rotate':
             self.rotate()
-        elif action == "drop":
+        elif action == 'drop':
             self.hard_drop()
-        elif action == "nothing":
-            pass
-        # Always fall one step
+        # always drop by 1 row
         alive = self.drop_one()
-        self.moves.append(action)
+
+        if action == "drop":
+            # Record the pieceid at this moment
+            self.moves.append({"move": action, "pieceid": self.piece.pieceid})
+        else:
+            self.moves.append({"move": action})
+
         return alive

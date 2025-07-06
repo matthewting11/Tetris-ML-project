@@ -1,12 +1,10 @@
 import tkinter as tk
-import time
 import json
 import sys
-import random
 
 from tetrisml import *
 
-# Load moves file from argument
+# Load moves file
 filename = sys.argv[1]
 
 with open(filename, "r") as f:
@@ -22,30 +20,43 @@ canvas.pack()
 # Re-initialize board
 board = [[None for _ in range(11)] for _ in range(29)]
 
-# Start the first piece
-current_piece = piece(pieceid=random.randint(1,7))
-
-def apply_move(move):
-    if move == "left":
-        current_piece.l()
-    elif move == "right":
-        current_piece.r()
-    elif move == "rotate":
-        current_piece.cw()
-    elif move == "drop":
-        current_piece.hard()
-    elif move == "nothing":
-        pass
+# Settings
+SPEED_MS = 100
 
 def replay_step(step_index):
+    global current_piece
     if step_index >= len(moves):
         print("Replay complete.")
         return
-    move = moves[step_index]
-    apply_move(move)
-    update_screen()
-    root.after(300, lambda: replay_step(step_index+1))
 
+    entry = moves[step_index]
+    pieceid = entry["pieceid"]
+    rotation = entry["rotation"]
+    target_x = entry["x"]
+
+    # Create the piece
+    current_piece = piece(pieceid=pieceid)
+
+    # Rotate it
+    for _ in range(rotation):
+        current_piece.cw()
+
+    # Move horizontally to the target position
+    current_piece.location[0] = target_x
+
+    # Hard drop
+    current_piece.hard()
+
+    # Redraw the screen
+    update_screen()
+
+    # Wait for the next step
+    root.after(SPEED_MS, lambda: replay_step(step_index + 1))
+
+# Start game to initialize
 start_game()
-root.after(1000, lambda: replay_step(0))
+
+# Begin replay after a short delay
+root.after(500, lambda: replay_step(0))
+
 root.mainloop()

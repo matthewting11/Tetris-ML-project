@@ -49,7 +49,7 @@ def compute_bumpiness(boolean_board):
     return bumpiness
 
 # GA parameters
-population_size = 20
+population_size = 50
 num_weights = 4
 weight_range = (-1.0, 1.0)
 num_generations = 10
@@ -73,44 +73,103 @@ class solution_model:
     def play_game(self, move_limit):
         game = TetrisSimulation()
         moves_played = 0
-
+    
         while not getattr(game, "game_over", False) and moves_played < move_limit:
-            best_action = "nothing"
-            best_score = -float('inf')
+            best_score = -float("inf")
+            best_rotation = 0
+            best_x = game.piece.location[0]
+    
+            # Try all 4 rotations
+            for rotation in range(4):
+                # Create a fresh copy of the game
+                sim_rot = TetrisSimulation()
+                sim_rot.board = [row.copy() for row in game.board]
+                sim_rot.piece = Piece(game.piece.pieceid)
+                #sim_rot.piece.blocks = [block.copy() for block in game.piece.blocks]
+                sim_rot.piece.blocks = list(game.piece.blocks)
 
-            for action in ["left", "right", "rotate", "drop", "nothing"]:
-                # Copy simulation
-                sim = TetrisSimulation()
-                sim.board = [row.copy() for row in game.board]
-                sim.piece = Piece(game.piece.pieceid)
-                sim.piece.blocks = game.piece.blocks.copy()
-                sim.piece.location = game.piece.location.copy()
+                sim_rot.piece.location = game.piece.location.copy()
+    
+                # Rotate to this rotation
+                for _ in range(rotation):
+                    sim_rot.rotate()
+    
+                # Compute min/max X positions
+                min_x = -5  # Reasonable default, will adjust
+                max_x = sim_rot.cols - 1
+    
+                # Actually determine piece width for better bounds
+                x_offsets = [b[0] for b in sim_rot.piece.blocks]
+                min_possible_x = -min(x_offsets)
+                max_possible_x = sim_rot.cols - 1 - max(x_offsets)
+    
+                # Loop over all valid X positions
+                for x in range(min_possible_x, max_possible_x + 1):
+                    # Copy the rotated simulation
+                    sim = TetrisSimulation()
+                    sim.board = [row.copy() for row in sim_rot.board]
+                    sim.piece = Piece(sim_rot.piece.pieceid)
+                    #sim.piece.blocks = [block.copy() for block in sim_rot.piece.blocks]
+                    sim.piece.blocks = list(sim_rot.piece.blocks)
 
-                sim.step(action)
-
-                boolean_board = [[cell is not None for cell in row] for row in sim.board]
-                lines_cleared = sim.lines_cleared
-                aggregate_height = compute_aggregate_height(boolean_board)
-                holes = count_holes(boolean_board)
-                bumpiness = compute_bumpiness(boolean_board)
-
-                score = (
-                    self.weights[0] * lines_cleared
-                    - self.weights[1] * aggregate_height
-                    - self.weights[2] * holes
-                    - self.weights[3] * bumpiness
-                )
-
-                if score > best_score:
-                    best_score = score
-                    best_action = action
-
-            alive = game.step(best_action)
+                    sim.piece.location = sim_rot.piece.location.copy()
+    
+                    # Move piece horizontally to target X
+                    sim.piece.location[0] = x
+    
+                    # If invalid, skip
+                    if not sim.valid_position(sim.piece.get_absolute_blocks()):
+                        continue
+                    
+                    # Hard drop
+                    sim.hard_drop()
+    
+                    # Evaluate the resulting board
+                    boolean_board = [[cell is not None for cell in row] for row in sim.board]
+                    lines_cleared = sim.lines_cleared
+                    aggregate_height = compute_aggregate_height(boolean_board)
+                    holes = count_holes(boolean_board)
+                    bumpiness = compute_bumpiness(boolean_board)
+    
+                    score = (
+                        self.weights[0] * lines_cleared
+                        - self.weights[1] * aggregate_height
+                        - self.weights[2] * holes
+                        - self.weights[3] * bumpiness
+                    )
+    
+                    # Keep the best placement
+                    if score > best_score:
+                        best_score = score
+                        best_rotation = rotation
+                        best_x = x
+    
+            # Now actually apply the chosen best placement in the real game
+            # Rotate
+            for _ in range(best_rotation):
+                game.rotate()
+    
+            # Move horizontally
+            game.piece.location[0] = best_x
+    
+            # Hard drop
+            game.hard_drop()
+    
+            # Record the placement
+            game.moves.append({
+                "pieceid": game.piece.pieceid,
+                "rotation": best_rotation,
+                "x": best_x
+            })
+    
             moves_played += 1
-            if not alive:
+    
+            # Check for game over
+            if getattr(game, "game_over", False):
                 break
-
+            
         return game.compute_fitness(), game.moves
+
 
 def create_initial_population(population_size, num_weights, weight_range, generation=0):
     population = []
@@ -160,8 +219,9 @@ for generation in range(num_generations):
     best_model, _ = model_records[0]
     print(f"Best fitness: {best_model.fitness}")
 
-    # Pick 4 random models to save
-    sample_indices = random.sample(range(len(model_records)), 4)
+    # Pick 4 best models to save
+    sample_indices = range(4)
+
     for i, idx in enumerate(sample_indices):
         model, moves = model_records[idx]
         filename = f"generation_{generation}_sample_{i}_moves.json"
