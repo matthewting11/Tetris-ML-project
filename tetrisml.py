@@ -592,6 +592,7 @@ def harddrop(self):
     if not paused and current_piece:
         current_piece.hard()
         current_piece.lock_time = 0
+        print(board)#DEVBBUGGGGGGGGGGGGGGG---------------------
         update_screen()
 
 # Function to reset the game state  
@@ -621,3 +622,12 @@ root.bind("<space>",harddrop)
 
 root.mainloop()
 
+def board_to_boolean(board):
+    """
+    Convert a Tetris board to a boolean grid.
+    Args:
+        board (list of lists): Original board (2D list) with colors or None.
+    Returns:
+        list of lists: Boolean grid (True = occupied, False = empty).
+    """
+    return [[cell is not None for cell in row] for row in board]
