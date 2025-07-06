@@ -12,6 +12,7 @@ canvas.pack()
 board = [[None for _ in range(11)] for _ in range(29)]
 
 def pieceidtoblocks(pieceid):
+    #Sets coordinates of tiles to relative block locations to create a unique piece
     if pieceid == 0:
         return [[0,0]]
     elif pieceid == 1:
@@ -277,7 +278,7 @@ tick_speed = 800
 speeds = [ 720, 630, 550, 470, 380, 300, 220, 130, 100,
     80,  70,  50,  30,  20,  17]
 def get_tick_speed(level):
-    return speeds[min(level-1,len(speeds)-1)]
+    return int(speeds[min(level-1,len(speeds)-1)])
 
 paused = False
 score = 0
@@ -403,11 +404,11 @@ def update_block():
             new_blocks.append([x,y])
         tick_speed = int(get_tick_speed(level))
         if current_piece.can_move_down(new_blocks)== True:
+            print("can move down")
             current_piece.blocks = new_blocks
             current_piece.location[1] += 1
             print("block is at",current_piece.location[0],current_piece.location[1])
             update_screen()
-        
             root.after(tick_speed, update_block)
             current_piece.lock_time = 0
         
@@ -415,6 +416,7 @@ def update_block():
             print("ass")
             if current_piece.lock_time == 0:
                 current_piece.lock_time = time.time()
+                #root.after(tick_speed, update_block)
             elif float(time.time()) - float(current_piece.lock_time) >= tick_speed/1000:
                 print("pp")
                 current_piece.landed = True
@@ -427,8 +429,9 @@ def update_block():
                 score+=points_added
                 print("done")
                 spawn_new_piece()
-                update_screen()
-            root.after(tick_speed,update_block)
+            update_screen()
+            root.after(get_tick_speed(level), update_block)
+
     else:
         print("lol")
         return
