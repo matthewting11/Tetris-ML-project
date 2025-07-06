@@ -232,9 +232,9 @@ class piece:
             
 
     def hard(self):
-        global points_added, score
+        global points_added, score, gameover
         #harddrop block on lowest possible level:
-        if paused or current_piece is None:
+        if paused or gameover or current_piece is None:
             return
         for x,y in self.blocks:
             new_blocks = []
@@ -247,6 +247,7 @@ class piece:
             current_piece.location[1]+=1
         current_piece.landed = True
         if current_piece.game_over_check():  # Check if the game is over
+            gameover = True
             draw_game_over()
             running = False
             return  # Exit without spawning a new piece
@@ -278,6 +279,7 @@ def get_tick_speed(level):
     return int(speeds[min(level-1,len(speeds)-1)])
 
 paused = False
+gameover = False
 score = 0
 total_lines_cleared = 0
 level = 1
@@ -297,8 +299,9 @@ next_queue = [random.randint(1,7) for _ in range(3)]
 #STARTING GAME
 running = True
 def start_game():
-    global paused, start_button,current_piece, board
+    global paused, start_button,current_piece, board, gameover
     paused = False
+    gameover = False
     start_button.destroy()
     
     canvas.delete("all")
@@ -373,28 +376,33 @@ def draw_game_UI():
 
     draw_next_queue()
 
-def draw_game_over():
-    canvas.delete("all")
-    #draw_grid()
-    #draw_game_UI()
-    #for row in range(rows):
-    #    for col in range(cols):
-    #        color = board[row][col]
-    #        if color:
-    #            x = start_x + col * block_size
-    #            y = start_y + row * block_size
-    #            draw_block(x, y, color)
-    canvas.create_rectangle(138, 241, 438, 391, outline="white", width=3, fill="gray20")
-    canvas.create_text(288, 286, text="Game Over", fill="white", font=("Courier", 32))
-    canvas.create_text(288, 326, text=f"Score: {score}", fill="white", font=("Courier", 16))
-    retry_button = tk.Button(root, text="Retry", cursor="hand2", font=("Courier", 16), bg="#444444", fg="white", relief="raised", command=reset_game)
-    canvas.create_window(288, 356, window=retry_button)
+def draw_game_over(event=None):
+    global gameover
+    if gameover:
+        canvas.delete("all")
+        #draw_grid()
+        #draw_game_UI()
+        #for row in range(rows):
+        #    for col in range(cols):
+        #        color = board[row][col]
+        #        if color:
+        #            x = start_x + col * block_size
+        #            y = start_y + row * block_size
+        #            draw_block(x, y, color)
+        canvas.create_rectangle(138, 241, 438, 391, outline="white", width=3, fill="gray20", tags="gameover")
+        canvas.create_text(288, 286, text="Game Over", fill="white", font=("Courier", 32), tags="gameover")
+        canvas.create_text(288, 326, text=f"Score: {score}", fill="white", font=("Courier", 16), tags="gameover")
+        retry_button = tk.Button(root, text="Retry", cursor="hand2", font=("Courier", 16), bg="#444444", fg="white", relief="raised", command=reset_game)
+        canvas.create_window(288, 356, window=retry_button, tags="gameover")
+    else:
+        canvas.delete("gameover")
+        update_screen()
 
 #SETTING BLOCK TICK MOVEMENT
 
 def update_block():
     global current_piece, board, score, tick_speed, level
-    if not paused:
+    if not paused or not gameover:
         new_blocks = []
         for block in current_piece.blocks:
             x,y = block
@@ -413,6 +421,7 @@ def update_block():
             elif float(time.time()) - float(current_piece.lock_time) >= tick_speed/1000:
                 current_piece.landed = True
                 if current_piece.game_over_check():  # Check if the game is over
+                    gameover = True
                     draw_game_over()
                     running = False
                     return  # Exit without spawning a new piece
@@ -557,32 +566,32 @@ def toggle_pause(event=None):
 
 #SETTING UP MOVEMENT FUNCTION
 def rotate_piece_CCW(event=None):
-    if not paused and current_piece:
+    if not paused or not gameover and current_piece:
         current_piece.ccw()
         current_piece.lock_time = 0
         update_screen()
 def rotate_piece_CW(event=None):
-    if not paused and current_piece:
+    if not paused or not gameover and current_piece:
         current_piece.cw()
         current_piece.lock_time = 0
         update_screen()
 def moveblock_L(self):
-    if not paused and current_piece:
+    if not paused or not gameover and current_piece:
         current_piece.l()
         current_piece.lock_time = 0
         update_screen()
 def moveblock_R(self):
-    if not paused and current_piece:
+    if not paused or not gameover and current_piece:
         current_piece.r()
         current_piece.lock_time = 0
         update_screen()
 def softdrop(self):
-    if not paused and current_piece:
+    if not paused or not gameover and current_piece:
         current_piece.soft()
         current_piece.lock_time = 0
         update_screen()
 def harddrop(self):
-    if not paused and current_piece:
+    if not paused or not gameover and current_piece:
         current_piece.hard()
         current_piece.lock_time = 0
         update_screen()
