@@ -144,7 +144,6 @@ class piece:
             absx = int(x+self.location[0])
             absy = int(y+self.location[1])
             if absy>=25 or board[int(absy)+1][int(absx)] is not None:
-                print("cant move down")
                 if current_piece.game_over_check():  # Check if the game is over
                     draw_game_over()
                     running = False
@@ -221,7 +220,6 @@ class piece:
             new_y = y
             new_blocks.append([x,new_y])
         if self.can_move_down(new_blocks):
-            print("accessing if it can move down")
             self.blocks = new_blocks
             self.location[1] += 1
             return self.blocks
@@ -259,7 +257,6 @@ class piece:
         spawn_new_piece()
 
     def fix_piece(self):
-        print("fixing")
         offset_x, offset_y = self.location  # piece's position on the grid
         for dx, dy in self.blocks:
             col = int(dx + offset_x)
@@ -404,21 +401,16 @@ def update_block():
             new_blocks.append([x,y])
         tick_speed = int(get_tick_speed(level))
         if current_piece.can_move_down(new_blocks)== True:
-            print("can move down")
             current_piece.blocks = new_blocks
             current_piece.location[1] += 1
-            print("block is at",current_piece.location[0],current_piece.location[1])
             update_screen()
             root.after(tick_speed, update_block)
             current_piece.lock_time = 0
         
         elif current_piece.can_move_down(new_blocks) == False :
-            print("ass")
             if current_piece.lock_time == 0:
                 current_piece.lock_time = time.time()
-                #root.after(tick_speed, update_block)
             elif float(time.time()) - float(current_piece.lock_time) >= tick_speed/1000:
-                print("pp")
                 current_piece.landed = True
                 if current_piece.game_over_check():  # Check if the game is over
                     draw_game_over()
@@ -427,13 +419,11 @@ def update_block():
                 current_piece.fix_piece()
                 clear_lines()
                 score+=points_added
-                print("done")
                 spawn_new_piece()
             update_screen()
             root.after(get_tick_speed(level), update_block)
 
     else:
-        print("lol")
         return
 
 def draw_next_queue():
@@ -595,7 +585,6 @@ def harddrop(self):
     if not paused and current_piece:
         current_piece.hard()
         current_piece.lock_time = 0
-        print(board)#DEVBBUGGGGGGGGGGGGGGG---------------------
         update_screen()
 
 # Function to reset the game state  
