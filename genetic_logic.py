@@ -4,6 +4,58 @@ import subprocess
 
 from tetris_simulation import TetrisSimulation, Piece
 
+"""
+Functions:
+- count_lines_cleared(boolean_board)
+    Counts the number of lines cleared in a theoretical Tetris board.
+
+- compute_aggregate_height(boolean_board)
+    Computes the aggregate height of blocks in a theoretical Tetris board.
+
+- count_holes(boolean_board)
+    Counts the number of holes in a theoretical Tetris board.
+
+- compute_bumpiness(boolean_board)
+- create_initial_population(population_size, num_weights, weight_range, generation=0)
+- mutate(weights, mutation_rate=0.1, mutation_strength=0.2)
+- crossover(weights1, weights2)
+- solution_model class with methods:
+    - get_weights()
+    - get_generation()
+    - get_fitness()
+    - play_game(move_limit)
+
+
+Data:
+    Population: List of **solution_model** instances
+        - weights: List of weights for the heuristic scoring functions
+        - generation: Generation number
+        - fitness: Fitness score based on game performance
+        - moves: List of moves made during the game
+
+
+
+WORKFLOW:
+1. Define constants and how to define the stating generation.
+
+2. for generation in range(num_generations):
+    a. Create initial population of solution_model instances with random weights.
+    
+    b. For each model in the population:
+        i. Play a game using the model's weights.
+        ii. Compute fitness based on the game outcome.
+    
+    c. Sort models by fitness and save the best ones.
+    
+    d. Reproduce new models using crossover and mutation.
+    
+    e. Replace the old population with the new one.
+
+
+"""
+
+
+
 # Heuristic scoring functions
 def count_lines_cleared(boolean_board):
     return sum(all(cell for cell in row) for row in boolean_board)
@@ -51,9 +103,16 @@ def compute_bumpiness(boolean_board):
 # GA parameters
 population_size = 50
 num_weights = 4
-weight_range = (-1.0, 1.0)
+#weight_range = (-1.0, 1.0)
 num_generations = 10
 move_limit = 500
+initialization_weight_ranges = {
+    "lines_cleared": (0.1, 1.0),
+    "aggregate_height": (-1.0, 0),
+    "holes": (-1.0, 0),
+    "bumpiness": (-1.0, 1.0)
+}
+
 
 class solution_model:
     def __init__(self, weights, generation, fitness=0):
@@ -171,10 +230,11 @@ class solution_model:
         return game.compute_fitness(), game.moves
 
 
-def create_initial_population(population_size, num_weights, weight_range, generation=0):
+def create_initial_population(population_size, num_weights, generation=0):
     population = []
     for _ in range(population_size):
-        weights = [random.uniform(*weight_range) for _ in range(num_weights)]
+        for key, weight_range in initialization_weight_ranges.items():
+            weights = [random.uniform(*weight_range) for _ in range(num_weights)]
         model = solution_model(weights, generation)
         population.append(model)
     return population
@@ -197,7 +257,7 @@ def crossover(weights1, weights2):
     return child_weights
 
 # Initialize population
-population = create_initial_population(population_size, num_weights, weight_range)
+population = create_initial_population(population_size, num_weights)
 
 processes = []
 

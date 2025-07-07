@@ -2,29 +2,31 @@ import tkinter as tk
 import json
 import sys
 
-from tetrisml import *
+# Import all your game functions and globals
+from tetrisml import (
+    setup_tetris, piece, update_screen, draw_grid, draw_game_UI, clear_lines, spawn_new_piece
+)
 
-# Load moves file
+root, canvas, board, get_tick_speed = setup_tetris()
+
+# Load moves
 filename = sys.argv[1]
-
 with open(filename, "r") as f:
     moves = json.load(f)
 
-root = tk.Tk()
-root.title("Tetris Replay")
-root.geometry("576x632")
+# Make sure the board is empty
+for r in range(len(board)):
+    for c in range(len(board[0])):
+        board[r][c] = None
 
-canvas = tk.Canvas(root, width=576, height=632, bg="black")
-canvas.pack()
+# Speed of replay (ms)
+SPEED_MS = 300
 
-# Re-initialize board
-board = [[None for _ in range(11)] for _ in range(29)]
-
-# Settings
-SPEED_MS = 100
+current_piece = None
 
 def replay_step(step_index):
     global current_piece
+
     if step_index >= len(moves):
         print("Replay complete.")
         return
@@ -34,29 +36,36 @@ def replay_step(step_index):
     rotation = entry["rotation"]
     target_x = entry["x"]
 
-    # Create the piece
+    # Create a new piece
     current_piece = piece(pieceid=pieceid)
 
-    # Rotate it
+    # Rotate piece
     for _ in range(rotation):
         current_piece.cw()
 
-    # Move horizontally to the target position
+    # Move horizontally to target position
     current_piece.location[0] = target_x
 
     # Hard drop
-    current_piece.hard()
+    while current_piece.can_move_down(current_piece.blocks):
+        current_piece.location[1] += 1
 
-    # Redraw the screen
+    # Lock the piece into the board
+    current_piece.landed = True
+    current_piece.fix_piece()
+
+    # Clear any lines
+    clear_lines()
+
+    # Redraw
     update_screen()
 
-    # Wait for the next step
+    # Schedule next step
     root.after(SPEED_MS, lambda: replay_step(step_index + 1))
 
-# Start game to initialize
-start_game()
 
-# Begin replay after a short delay
+# Start replay after a short delay
 root.after(500, lambda: replay_step(0))
 
+# Start main loop
 root.mainloop()

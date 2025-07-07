@@ -2,14 +2,7 @@ import tkinter as tk
 import random
 import time
 
-root = tk.Tk()
-root.title("Tetris Game")
-root.geometry("576x632")
 
-canvas = tk.Canvas(root, width=576, height=632, bg="black")
-canvas.pack()
-
-board = [[None for _ in range(11)] for _ in range(29)]
 
 def pieceidtoblocks(pieceid):
     #Sets coordinates of tiles to relative block locations to create a unique piece
@@ -265,39 +258,8 @@ class piece:
             if 0 <= row < rows and 0 <= col < cols:
                 board[row][col] = self.color
         update_screen()
+    
 
-
-block_size = 16
-cols = 11
-rows = 26 
-start_x = 200
-start_y = 100
-tick_speed = 800
-speeds = [ 720, 630, 550, 470, 380, 300, 220, 130, 100,
-    80,  70,  50,  30,  20,  17]
-def get_tick_speed(level):
-    return int(speeds[min(level-1,len(speeds)-1)])
-
-paused = False
-gameover = False
-score = 0
-total_lines_cleared = 0
-level = 1
-block = {"x":5, "y":0}
-
-
-#DEFINE BORDERS
-left_bound = -cols // 2
-right_bound = cols // 2
-bottom_bound = 84
-
-
-
-#NEXT QUEUE
-next_queue = [random.randint(1,7) for _ in range(3)]
-
-#STARTING GAME
-running = True
 def start_game():
     global paused, start_button,current_piece, board, gameover
     paused = False
@@ -315,19 +277,8 @@ def start_game():
     update_block()
 
     
-controls = [
-    "← / → arrow keys : Move L/R",
-    "↓ arrow key : Soft Drop",
-    "Space-bar : Hard drop",
-    "↑ : Rotate CW",
-    "Z : Rotate CCW",
-    "Esc : Pause"
-   ]    
-for i, line in enumerate(controls):
-    canvas.create_text(288, 300 + i*20, text=line, fill="white", font=("Courier",12),tags="Pause")
 
-start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
-canvas.create_window(288,150, window=start_button)
+
 
 
 
@@ -611,16 +562,70 @@ def reset_game():
     start_game()
 
 
-root.bind("<Escape>", toggle_pause)
-root.bind("<z>",rotate_piece_CCW)
-root.bind("<Up>",rotate_piece_CW)
-root.bind("<Left>",moveblock_L)
-root.bind("<Right>",moveblock_R)
-root.bind("<Down>",softdrop)
-root.bind("<space>",harddrop)
+
 
 
 if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("Tetris Game")
+    root.geometry("576x632")
+
+    canvas = tk.Canvas(root, width=576, height=632, bg="black")
+    canvas.pack()
+
+    board = [[None for _ in range(11)] for _ in range(29)]
+
+    block_size = 16
+    cols = 11
+    rows = 26 
+    start_x = 200
+    start_y = 100
+    tick_speed = 800
+    speeds = [ 720, 630, 550, 470, 380, 300, 220, 130, 100,
+        80,  70,  50,  30,  20,  17]
+    def get_tick_speed(level):
+        return int(speeds[min(level-1,len(speeds)-1)])
+    controls = [
+        "← / → arrow keys : Move L/R",
+        "↓ arrow key : Soft Drop",
+        "Space-bar : Hard drop",
+        "↑ : Rotate CW",
+        "Z : Rotate CCW",
+        "Esc : Pause"
+       ]    
+    for i, line in enumerate(controls):
+        canvas.create_text(288, 300 + i*20, text=line, fill="white", font=("Courier",12),tags="Pause")
+
+    paused = False
+    gameover = False
+    score = 0
+    total_lines_cleared = 0
+    level = 1
+    block = {"x":5, "y":0}
+
+
+    #DEFINE BORDERS
+    left_bound = -cols // 2
+    right_bound = cols // 2
+    bottom_bound = 84
+
+
+    #NEXT QUEUE
+    next_queue = [random.randint(1,7) for _ in range(3)]
+
+    #STARTING GAME
+    running = True
+
+    start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
+    canvas.create_window(288,150, window=start_button)
+    root.bind("<Escape>", toggle_pause)
+    root.bind("<z>",rotate_piece_CCW)
+    root.bind("<Up>",rotate_piece_CW)
+    root.bind("<Left>",moveblock_L)
+    root.bind("<Right>",moveblock_R)
+    root.bind("<Down>",softdrop)
+    root.bind("<space>",harddrop)
+
     root.mainloop()
 
 def board_to_boolean(board):
@@ -632,3 +637,28 @@ def board_to_boolean(board):
         list of lists: Boolean grid (True = occupied, False = empty).
     """
     return [[cell is not None for cell in row] for row in board]
+
+def setup_tetris():
+    # Create Tkinter root and UI elements
+    root = tk.Tk()
+    root.title("Tetris Game")
+    root.geometry("576x632")
+
+    canvas = tk.Canvas(root, width=576, height=632, bg="black")
+    canvas.pack()
+
+    board = [[None for _ in range(11)] for _ in range(29)]
+
+    block_size = 16
+    cols = 11
+    rows = 26 
+    start_x = 200
+    start_y = 100
+    tick_speed = 800
+    speeds = [720, 630, 550, 470, 380, 300, 220, 130, 100, 80, 70, 50, 30, 20, 17]
+
+    def get_tick_speed(level):
+        return int(speeds[min(level-1, len(speeds)-1)])
+
+    # Return everything you need
+    return root, canvas, board, get_tick_speed
