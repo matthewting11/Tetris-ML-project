@@ -1,7 +1,7 @@
 import tkinter as tk
 import random
 import time
-
+root = tk.Tk()
 
 
 def pieceidtoblocks(pieceid):
@@ -276,11 +276,6 @@ def start_game():
     update_screen()
     update_block()
 
-    
-<<<<<<< Updated upstream
-
-
-=======
 controls = [
     "← / → arrow keys : Move L/R",
     "↓ arrow key : Soft Drop",
@@ -307,7 +302,8 @@ for i, letter in enumerate(tetris_letters):
     )
 start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
 canvas.create_window(288,250, window=start_button, tags="start")
->>>>>>> Stashed changes
+canvas.pack()
+
 
 
 
