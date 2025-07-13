@@ -563,7 +563,7 @@ def reset_game():
     current_piece = None
     running = True
     canvas.delete("all")
-    start_game()
+    spawn_new_piece()
 
 
 
@@ -616,7 +616,7 @@ if __name__ == "__main__":
             tags="start"
         )
     start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
-    canvas.create_window(288,500, window=start_button, tags="start")
+    canvas.create_window(288,250, window=start_button, tags="start")
     paused = False
     gameover = False
     score = 0
@@ -638,7 +638,6 @@ if __name__ == "__main__":
     running = True
 
 
-    canvas.create_window(288,250, window=start_button)
     root.bind("<Escape>", toggle_pause)
     root.bind("<z>",rotate_piece_CCW)
     root.bind("<Up>",rotate_piece_CW)
