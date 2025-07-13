@@ -2,6 +2,8 @@ import tkinter as tk
 import random
 import time
 root = tk.Tk()
+canvas = tk.Canvas(root,width=576, height=632, bg="gray")
+canvas.pack()
 
 
 def pieceidtoblocks(pieceid):
@@ -302,16 +304,6 @@ for i, letter in enumerate(tetris_letters):
     )
 start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
 canvas.create_window(288,250, window=start_button, tags="start")
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-canvas.pack()
-
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-
-
 
 #SETTING UI
 
@@ -601,12 +593,6 @@ def reset_game():
     running = True
     canvas.delete("all")
     spawn_new_piece()
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-
 
 root.bind("<Escape>", toggle_pause)
 root.bind("<z>",rotate_piece_CCW)
@@ -615,7 +601,7 @@ root.bind("<Left>",moveblock_L)
 root.bind("<Right>",moveblock_R)
 root.bind("<Down>",softdrop)
 root.bind("<space>",harddrop)
->>>>>>> Stashed changes
+
 
 
 
