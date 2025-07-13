@@ -112,13 +112,20 @@ initialization_weight_ranges = {
     "holes": (-1.0, 0),
     "bumpiness": (-1.0, 1.0)
 }
+scoring_functions = [
+    count_lines_cleared,
+    compute_aggregate_height,
+    count_holes,
+    compute_bumpiness
+]
 
 
 class solution_model:
-    def __init__(self, weights, generation, fitness=0):
+    def __init__(self, weights, generation, scoring_funs, fitness=0):
         self.weights = weights
         self.generation = generation
         self.fitness = fitness
+        self.scoring_funs = scoring_funs
 
     def get_weights(self):
         return self.weights
@@ -129,103 +136,18 @@ class solution_model:
     def get_fitness(self):
         return self.fitness
 
+    def calc_move_score(self,board):
+        score = 0
+        for wnum in range(len(self.weights)):
+            score += self.weights[wnum] * self.scoring_funs[wnum](board)
+        return score
+
+
+
     def play_game(self, move_limit):
-        game = TetrisSimulation()
+        game = TetrisSimulation(solution_model=self)
         moves_played = 0
     
-        while not getattr(game, "game_over", False) and moves_played < move_limit:
-            best_score = -float("inf")
-            best_rotation = 0
-            best_x = game.piece.location[0]
-    
-            # Try all 4 rotations
-            for rotation in range(4):
-                # Create a fresh copy of the game
-                sim_rot = TetrisSimulation()
-                sim_rot.board = [row.copy() for row in game.board]
-                sim_rot.piece = Piece(game.piece.pieceid)
-                #sim_rot.piece.blocks = [block.copy() for block in game.piece.blocks]
-                sim_rot.piece.blocks = list(game.piece.blocks)
-
-                sim_rot.piece.location = game.piece.location.copy()
-    
-                # Rotate to this rotation
-                for _ in range(rotation):
-                    sim_rot.rotate()
-    
-                # Compute min/max X positions
-                min_x = -5  # Reasonable default, will adjust
-                max_x = sim_rot.cols - 1
-    
-                # Actually determine piece width for better bounds
-                x_offsets = [b[0] for b in sim_rot.piece.blocks]
-                min_possible_x = -min(x_offsets)
-                max_possible_x = sim_rot.cols - 1 - max(x_offsets)
-    
-                # Loop over all valid X positions
-                for x in range(min_possible_x, max_possible_x + 1):
-                    # Copy the rotated simulation
-                    sim = TetrisSimulation()
-                    sim.board = [row.copy() for row in sim_rot.board]
-                    sim.piece = Piece(sim_rot.piece.pieceid)
-                    #sim.piece.blocks = [block.copy() for block in sim_rot.piece.blocks]
-                    sim.piece.blocks = list(sim_rot.piece.blocks)
-
-                    sim.piece.location = sim_rot.piece.location.copy()
-    
-                    # Move piece horizontally to target X
-                    sim.piece.location[0] = x
-    
-                    # If invalid, skip
-                    if not sim.valid_position(sim.piece.get_absolute_blocks()):
-                        continue
-                    
-                    # Hard drop
-                    sim.hard_drop()
-    
-                    # Evaluate the resulting board
-                    boolean_board = [[cell is not None for cell in row] for row in sim.board]
-                    lines_cleared = sim.lines_cleared
-                    aggregate_height = compute_aggregate_height(boolean_board)
-                    holes = count_holes(boolean_board)
-                    bumpiness = compute_bumpiness(boolean_board)
-    
-                    score = (
-                        self.weights[0] * lines_cleared
-                        - self.weights[1] * aggregate_height
-                        - self.weights[2] * holes
-                        - self.weights[3] * bumpiness
-                    )
-    
-                    # Keep the best placement
-                    if score > best_score:
-                        best_score = score
-                        best_rotation = rotation
-                        best_x = x
-    
-            # Now actually apply the chosen best placement in the real game
-            # Rotate
-            for _ in range(best_rotation):
-                game.rotate()
-    
-            # Move horizontally
-            game.piece.location[0] = best_x
-    
-            # Hard drop
-            game.hard_drop()
-    
-            # Record the placement
-            game.moves.append({
-                "pieceid": game.piece.pieceid,
-                "rotation": best_rotation,
-                "x": best_x
-            })
-    
-            moves_played += 1
-    
-            # Check for game over
-            if getattr(game, "game_over", False):
-                break
             
         return game.compute_fitness(), game.moves
 
@@ -235,7 +157,7 @@ def create_initial_population(population_size, num_weights, generation=0):
     for _ in range(population_size):
         for key, weight_range in initialization_weight_ranges.items():
             weights = [random.uniform(*weight_range) for _ in range(num_weights)]
-        model = solution_model(weights, generation)
+        model = solution_model(weights, scoring_functions, generation)
         population.append(model)
     return population
 
@@ -310,7 +232,7 @@ for generation in range(num_generations):
         parent2 = random.choice(parents)
         child_weights = crossover(parent1.get_weights(), parent2.get_weights())
         mutated_child_weights = mutate(child_weights, mutation_rate=0.2, mutation_strength=0.3)
-        child_model = solution_model(mutated_child_weights, generation + 1)
+        child_model = solution_model(mutated_child_weights, scoring_functions, generation + 1)
         new_population.append(child_model)
 
     # Next generation
