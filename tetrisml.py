@@ -302,8 +302,11 @@ for i, letter in enumerate(tetris_letters):
     )
 start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
 canvas.create_window(288,250, window=start_button, tags="start")
+<<<<<<< Updated upstream
 canvas.pack()
 
+=======
+>>>>>>> Stashed changes
 
 
 
@@ -595,6 +598,18 @@ def reset_game():
     running = True
     canvas.delete("all")
     spawn_new_piece()
+<<<<<<< Updated upstream
+=======
+
+
+root.bind("<Escape>", toggle_pause)
+root.bind("<z>",rotate_piece_CCW)
+root.bind("<Up>",rotate_piece_CW)
+root.bind("<Left>",moveblock_L)
+root.bind("<Right>",moveblock_R)
+root.bind("<Down>",softdrop)
+root.bind("<space>",harddrop)
+>>>>>>> Stashed changes
 
 
 
