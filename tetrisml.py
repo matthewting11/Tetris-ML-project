@@ -1,10 +1,6 @@
 import tkinter as tk
 import random
 import time
-root = tk.Tk()
-canvas = tk.Canvas(root,width=576, height=632, bg="gray")
-canvas.pack()
-
 
 def pieceidtoblocks(pieceid):
     #Sets coordinates of tiles to relative block locations to create a unique piece
@@ -278,32 +274,7 @@ def start_game():
     update_screen()
     update_block()
 
-controls = [
-    "← / → arrow keys : Move L/R",
-    "↓ arrow key : Soft Drop",
-    "Space-bar : Hard drop",
-    "↑ : Rotate CW",
-    "Z : Rotate CCW",
-    "Esc : Pause"
-   ]    
-for i, line in enumerate(controls):
-    canvas.create_text(288, 300 + i*20, text=line, fill="white", font=("Courier",12),tags="Pause")
-tetris_colors = ["red", "orange", "yellow", "green", "blue", "purple"]
-tetris_letters = "TETRIS"
-startingx = 100  # Starting x position
-y = 150         # y position for all letters
 
-for i, letter in enumerate(tetris_letters):
-    canvas.create_text(
-        startingx + i * 80,  # Adjust spacing between letters
-        y,
-        text=letter,
-        fill=tetris_colors[i],
-        font=("Courier", 100, "bold"),
-        tags="start"
-    )
-start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
-canvas.create_window(288,250, window=start_button, tags="start")
 
 #SETTING UI
 
@@ -592,15 +563,8 @@ def reset_game():
     current_piece = None
     running = True
     canvas.delete("all")
-    spawn_new_piece()
+    start_game()
 
-root.bind("<Escape>", toggle_pause)
-root.bind("<z>",rotate_piece_CCW)
-root.bind("<Up>",rotate_piece_CW)
-root.bind("<Left>",moveblock_L)
-root.bind("<Right>",moveblock_R)
-root.bind("<Down>",softdrop)
-root.bind("<space>",harddrop)
 
 
 
@@ -634,10 +598,25 @@ if __name__ == "__main__":
         "↑ : Rotate CW",
         "Z : Rotate CCW",
         "Esc : Pause"
-       ]    
+    ]    
     for i, line in enumerate(controls):
         canvas.create_text(288, 300 + i*20, text=line, fill="white", font=("Courier",12),tags="Pause")
+    tetris_colors = ["red", "orange", "yellow", "green", "blue", "purple"]
+    tetris_letters = "TETRIS"
+    startingx = 100  # Starting x position
+    y = 150         # y position for all letters
 
+    for i, letter in enumerate(tetris_letters):
+        canvas.create_text(
+            startingx + i * 80,  # Adjust spacing between letters
+            y,
+            text=letter,
+            fill=tetris_colors[i],
+            font=("Courier", 100, "bold"),
+            tags="start"
+        )
+    start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
+    canvas.create_window(288,500, window=start_button, tags="start")
     paused = False
     gameover = False
     score = 0
@@ -658,8 +637,8 @@ if __name__ == "__main__":
     #STARTING GAME
     running = True
 
-    start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
-    canvas.create_window(288,150, window=start_button)
+
+    canvas.create_window(288,250, window=start_button)
     root.bind("<Escape>", toggle_pause)
     root.bind("<z>",rotate_piece_CCW)
     root.bind("<Up>",rotate_piece_CW)
