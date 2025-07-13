@@ -88,7 +88,7 @@ class piece:
         self.position = position
         self.pieceid = pieceid
         self.landed = landed
-        self.blocks = pieeidtoblocks(pieceid)
+        self.blocks = pieceidtoblocks(pieceid)
         self.location = [5,25]
         self.pivot = center_piece(pieceid)
     def ccw(self):

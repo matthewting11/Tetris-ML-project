@@ -242,7 +242,6 @@ class piece:
         if current_piece.game_over_check():  # Check if the game is over
             gameover = True
             draw_game_over()
-            running = False
             return  # Exit without spawning a new piece
         current_piece.fix_piece()
         clear_lines()
@@ -265,8 +264,9 @@ def start_game():
     paused = False
     gameover = False
     start_button.destroy()
-    
+
     canvas.delete("all")
+    
 
     random_piece_id = random.randint(1,7)
     current_piece = piece(pieceid=random_piece_id)
@@ -277,8 +277,37 @@ def start_game():
     update_block()
 
     
+<<<<<<< Updated upstream
 
 
+=======
+controls = [
+    "← / → arrow keys : Move L/R",
+    "↓ arrow key : Soft Drop",
+    "Space-bar : Hard drop",
+    "↑ : Rotate CW",
+    "Z : Rotate CCW",
+    "Esc : Pause"
+   ]    
+for i, line in enumerate(controls):
+    canvas.create_text(288, 300 + i*20, text=line, fill="white", font=("Courier",12),tags="Pause")
+tetris_colors = ["red", "orange", "yellow", "green", "blue", "purple"]
+tetris_letters = "TETRIS"
+startingx = 100  # Starting x position
+y = 150         # y position for all letters
+
+for i, letter in enumerate(tetris_letters):
+    canvas.create_text(
+        startingx + i * 80,  # Adjust spacing between letters
+        y,
+        text=letter,
+        fill=tetris_colors[i],
+        font=("Courier", 100, "bold"),
+        tags="start"
+    )
+start_button = tk.Button(root, text="▶ Start Game",cursor="hand2", font=("Courier", 16), bg="#444444",fg="white",relief="raised",command=start_game)
+canvas.create_window(288,250, window=start_button, tags="start")
+>>>>>>> Stashed changes
 
 
 
@@ -329,7 +358,7 @@ def draw_game_UI():
 
 def draw_game_over(event=None):
     global gameover
-    if gameover:
+    if gameover:    
         canvas.delete("all")
         #draw_grid()
         #draw_game_UI()
@@ -347,13 +376,17 @@ def draw_game_over(event=None):
         canvas.create_window(288, 356, window=retry_button, tags="gameover")
     else:
         canvas.delete("gameover")
-        update_screen()
+
 
 #SETTING BLOCK TICK MOVEMENT
 
 def update_block():
-    global current_piece, board, score, tick_speed, level
-    if not paused or not gameover:
+    global current_piece, board, score, tick_speed, level, gameover
+    if paused or gameover:
+        root.after(get_tick_speed(level),update_block)
+        return
+    
+    if not paused and not gameover:
         new_blocks = []
         for block in current_piece.blocks:
             x,y = block
@@ -374,7 +407,6 @@ def update_block():
                 if current_piece.game_over_check():  # Check if the game is over
                     gameover = True
                     draw_game_over()
-                    running = False
                     return  # Exit without spawning a new piece
                 current_piece.fix_piece()
                 clear_lines()
@@ -383,8 +415,7 @@ def update_block():
             update_screen()
             root.after(get_tick_speed(level), update_block)
 
-    else:
-        return
+
 
 def draw_next_queue():
     x_offset = 450 + block_size
@@ -470,28 +501,30 @@ def clear_lines():
     elif lines_cleared == 4:
         points_added = 1200 * level
     
-    tick_speed = get_tick_speed
+    tick_speed = get_tick_speed(level)
 
     return points_added
 
 def update_screen():
-    canvas.delete("all")
-    draw_grid()
-    draw_game_UI()
-    for row in range(rows):
-        for col in range(cols):
-            color = board[row][col]
-            if color:
-                x = start_x + col * block_size
-                y = start_y + row * block_size
-                draw_block(x,y,color)
-    if current_piece:
-        draw_piece()
+    global paused, gameover
+    if not paused and not gameover:
+        canvas.delete("all")
+        draw_grid()
+        draw_game_UI()
+        for row in range(rows):
+            for col in range(cols):
+                color = board[row][col]
+                if color:
+                    x = start_x + col * block_size
+                    y = start_y + row * block_size
+                    draw_block(x,y,color)
+        if current_piece:
+            draw_piece()
 
 
 # SETUP PAUSE SYSTEM
 def toggle_pause(event=None):
-    global paused
+    global paused,tick_speed
     paused = not paused
     if paused:
         canvas.delete("all")
@@ -517,31 +550,37 @@ def toggle_pause(event=None):
 
 #SETTING UP MOVEMENT FUNCTION
 def rotate_piece_CCW(event=None):
+    global paused, gameover
     if not paused or not gameover and current_piece:
         current_piece.ccw()
         current_piece.lock_time = 0
         update_screen()
 def rotate_piece_CW(event=None):
+    global paused, gameover
     if not paused or not gameover and current_piece:
         current_piece.cw()
         current_piece.lock_time = 0
         update_screen()
 def moveblock_L(self):
+    global paused,gameover
     if not paused or not gameover and current_piece:
         current_piece.l()
         current_piece.lock_time = 0
         update_screen()
 def moveblock_R(self):
+    global paused,gameover
     if not paused or not gameover and current_piece:
         current_piece.r()
         current_piece.lock_time = 0
         update_screen()
 def softdrop(self):
+    global paused,gameover
     if not paused or not gameover and current_piece:
         current_piece.soft()
         current_piece.lock_time = 0
         update_screen()
 def harddrop(self):
+    global paused,gameover
     if not paused or not gameover and current_piece:
         current_piece.hard()
         current_piece.lock_time = 0
@@ -549,7 +588,8 @@ def harddrop(self):
 
 # Function to reset the game state  
 def reset_game():
-    global board, score, total_lines_cleared, level, next_queue, current_piece, running, tick_speed
+    global board, score, total_lines_cleared, level, next_queue, current_piece, running, tick_speed,gameover
+    gameover = False
     board = [[None for _ in range(11)] for _ in range(29)]
     score = 0
     total_lines_cleared = 0
@@ -557,9 +597,8 @@ def reset_game():
     next_queue = [random.randint(1,7) for _ in range(3)]
     current_piece = None
     running = True
-    tick_speed = 800
     canvas.delete("all")
-    start_game()
+    spawn_new_piece()
 
 
 
