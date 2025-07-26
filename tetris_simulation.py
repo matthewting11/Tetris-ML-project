@@ -34,6 +34,9 @@ class Piece:
                 return False
         return True
 
+    def get_piece_id(self):
+        return self.pieceid
+
 class TetrisSimulation:
     def __init__(self, sol_model, cols=11, rows=26):
         self.cols = cols
@@ -67,33 +70,41 @@ class TetrisSimulation:
 
     def make_a_move_bitch(self):
         possibilities_undropped = []
+        possibilities_rot_shift = []
 
         #Get all possible rotations
         basecoords = []
+        rotation_nums = []
         for _ in range(4):
             basecoords.append(self.piece.get_blocks_relative())
+            rotation_nums.append(_)
             self.piece.rotated_blocks()
         
 
-        #Get all possible horizontal shifts
+        #Get all possible horizontal shifts, MORON CODE
 
         for shift in range(-2, self.cols+2):
-            for possible_rotation in basecoords:
+            for possible_rotation in range(len(basecoords)):
                 new_piece = Piece(pieceid=self.piece.pieceid, location=(shift, 0))
-                new_piece.blocks = possible_rotation
+                new_piece.blocks = basecoords[possible_rotation]
                 if self.valid_position(new_piece.get_absolute_blocks()):
                     possibilities_undropped.append(new_piece.get_absolute_blocks())
+                    possibilities_rot_shift.append((rotation_nums[possible_rotation],shift))
         
         #convert undropped to dropped, get output boards
         dropped_possible_boards = []
         maximum_score=  -10000
         best_board = None
+        best_rot_shift = (0,0)
+
         for undropped in possibilities_undropped:
             sim_board = simulated_board(self.board, undropped)
             score = self.sol_model.calc_move_score(sim_board.place_drop_export())
             if score > maximum_score:
                 best_board = sim_board.get_board()
                 maximum_score = score
+        
+        return best_board, self.piece.get_piece_id(), best_rot_shift
         
         
         
