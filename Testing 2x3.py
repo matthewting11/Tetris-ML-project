@@ -6,7 +6,7 @@ cols = 10
 rows = 28  # updated from 20 to 28
 INFO_PANEL_WIDTH = 80
 TOTAL_GAME_WIDTH = 300
-block_size = (TOTAL_GAME_WIDTH - INFO_PANEL_WIDTH) // cols  # 22
+block_size = 16
 
 class Piece:
     def __init__(self, pieceid=0):
@@ -36,7 +36,7 @@ class Piece:
         return colors.get(self.pieceid, "gray")
 
 class TetrisGame:
-    def __init__(self, canvas, x_offset, y_offset,json_data=None):
+    def __init__(self, canvas, x_offset, y_offset,json_data=None,moves_list=None):
         self.canvas = canvas
         self.x_offset = x_offset + INFO_PANEL_WIDTH  # Shift grid right for info panel
         self.y_offset = y_offset
@@ -46,16 +46,39 @@ class TetrisGame:
         self.score = 0
         self.lines = 0
         self.level = 1
-        self.spawn_new_piece()
+        self.moves_list = moves_list or []
+        self.move_index = 0
+        self.piece_placed = True
         if json_data:
-            self.load_from_json(json_data)
-        else:
+            pass
+        if not self.moves_list:
             self.spawn_new_piece()
 
-    def spawn_new_piece(self):
-        self.current_piece = Piece(random.randint(1, 7))
+    def place_piece_from_move(self, move):
+        # Create piece of given pieceid
+        self.current_piece = Piece(move["pieceid"])
+
+        # Rotate piece N times
+        for _ in range(move["rotation"]):
+            self.current_piece.rotate()
+
+        # Set piece horizontal location to move['x']
+        self.current_piece.location[0] = move["x"]
+        self.current_piece.location[1] = 0  # start at top row
+
+        # Drop piece immediately to lowest possible y
+        while self.can_move_down():
+            self.current_piece.location[1] += 1
+
+        # Step back one, because last move down was invalid
+        self.current_piece.location[1] -= 1
+
+        # Lock the piece into the board
+        self.lock_piece()
 
     def can_move_down(self):
+        if self.current_piece is None:
+            return
         for dx, dy in self.current_piece.blocks:
             x = self.current_piece.location[0] + dx
             y = self.current_piece.location[1] + dy + 1
@@ -83,13 +106,19 @@ class TetrisGame:
             self.board = new_board
 
     def update(self):
+        if self.current_piece is None:
+            return
         if self.can_move_down():
             self.current_piece.location[1] += 1
         else:
             self.lock_piece()
             self.spawn_new_piece()
+    def spawn_new_piece(self):
+        self.current_piece = Piece(random.randint(1, 7))
 
     def render(self):
+        if self.current_piece is None:
+            return
         self.draw_info()
         self.draw_grid()
         self.draw_board()
@@ -137,10 +166,6 @@ class TetrisGame:
         pieceid = data.get("pieceid", 1)
         self.current_piece = Piece(pieceid)
 
-        # Load stats
-        self.score = data.get("score", 0)
-        self.lines = data.get("lines", 0)
-        self.level = data.get("level", 1)
 
 
 NUM_ROWS = 2
@@ -153,25 +178,25 @@ def main():
     window = tk.Toplevel(root)
     window.title("Multi Tetris AI Arena")
 
-    canvas_width = NUM_COLS * (cols * block_size + 60)
+    canvas_width = NUM_COLS * (cols * block_size + 100)
     canvas_height = NUM_ROWS * (rows * block_size + 60)
     canvas = tk.Canvas(window, width=canvas_width, height=canvas_height, bg="black")
     canvas.pack()
 
     # Load the JSON file for the top-left game
     try:
-        with open("generation_0_sample_0_moves.json", "r") as f:
-            json_data = json.load(f)
+        with open("C:/Users\matth\OneDrive\Documents\GitHub\Tetris-ML-project\generation_0_sample_0_moves.json", "r") as f:
+            moves_list = json.load(f)
     except Exception as e:
         print("Error loading JSON:", e)
-        json_data = None
+        moves_list = None
 
     for r in range(NUM_ROWS):
         for c in range(NUM_COLS):
-            x_offset = c * (cols * block_size + 20)
+            x_offset = c * (cols * block_size + 80)
             y_offset = r * (rows * block_size + 60)
             if r == 0 and c == 0:
-                game = TetrisGame(canvas, x_offset, y_offset, json_data)
+                game = TetrisGame(canvas, x_offset, y_offset, moves_list=moves_list)
             else:
                 game = TetrisGame(canvas, x_offset, y_offset)
             GAMES.append(game)
