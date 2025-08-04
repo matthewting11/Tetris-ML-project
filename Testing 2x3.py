@@ -1,5 +1,6 @@
 import tkinter as tk
 import random
+import json
 
 cols = 10
 rows = 28  # updated from 20 to 28
@@ -35,7 +36,7 @@ class Piece:
         return colors.get(self.pieceid, "gray")
 
 class TetrisGame:
-    def __init__(self, canvas, x_offset, y_offset):
+    def __init__(self, canvas, x_offset, y_offset,json_data=None):
         self.canvas = canvas
         self.x_offset = x_offset + INFO_PANEL_WIDTH  # Shift grid right for info panel
         self.y_offset = y_offset
@@ -46,6 +47,10 @@ class TetrisGame:
         self.lines = 0
         self.level = 1
         self.spawn_new_piece()
+        if json_data:
+            self.load_from_json(json_data)
+        else:
+            self.spawn_new_piece()
 
     def spawn_new_piece(self):
         self.current_piece = Piece(random.randint(1, 7))
@@ -121,6 +126,22 @@ class TetrisGame:
         self.canvas.create_text(info_x, info_y + 10, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Score:\n{self.score}")
         self.canvas.create_text(info_x, info_y + 60, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Lines:\n{self.lines}")
         self.canvas.create_text(info_x, info_y + 110, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Level:\n{self.level}")
+    def load_from_json(self, data):
+        # Load board
+        json_board = data.get("board", [])
+        for r in range(min(rows, len(json_board))):
+            for c in range(min(cols, len(json_board[r]))):
+                self.board[r][c] = json_board[r][c]
+
+        # Load piece
+        pieceid = data.get("pieceid", 1)
+        self.current_piece = Piece(pieceid)
+
+        # Load stats
+        self.score = data.get("score", 0)
+        self.lines = data.get("lines", 0)
+        self.level = data.get("level", 1)
+
 
 NUM_ROWS = 2
 NUM_COLS = 3
@@ -128,17 +149,31 @@ GAMES = []
 
 def main():
     root = tk.Tk()
-    root.title("Multi Tetris AI Arena")
-    canvas_width = NUM_COLS * TOTAL_GAME_WIDTH
-    canvas_height = NUM_ROWS * (rows * block_size + 20)
-    canvas = tk.Canvas(root, width=canvas_width, height=canvas_height, bg="black")
+    root.withdraw()
+    window = tk.Toplevel(root)
+    window.title("Multi Tetris AI Arena")
+
+    canvas_width = NUM_COLS * (cols * block_size + 60)
+    canvas_height = NUM_ROWS * (rows * block_size + 60)
+    canvas = tk.Canvas(window, width=canvas_width, height=canvas_height, bg="black")
     canvas.pack()
+
+    # Load the JSON file for the top-left game
+    try:
+        with open("generation_0_sample_0_moves.json", "r") as f:
+            json_data = json.load(f)
+    except Exception as e:
+        print("Error loading JSON:", e)
+        json_data = None
 
     for r in range(NUM_ROWS):
         for c in range(NUM_COLS):
-            x_offset = c * TOTAL_GAME_WIDTH
-            y_offset = r * (rows * block_size + 20)
-            game = TetrisGame(canvas, x_offset, y_offset)
+            x_offset = c * (cols * block_size + 20)
+            y_offset = r * (rows * block_size + 60)
+            if r == 0 and c == 0:
+                game = TetrisGame(canvas, x_offset, y_offset, json_data)
+            else:
+                game = TetrisGame(canvas, x_offset, y_offset)
             GAMES.append(game)
 
     def tick_all_games():
@@ -146,7 +181,7 @@ def main():
         for game in GAMES:
             game.update()
             game.render()
-        root.after(300, tick_all_games)
+        window.after(300, tick_all_games)
 
     tick_all_games()
     root.mainloop()
