@@ -157,6 +157,7 @@ class TetrisGame:
         self.canvas.create_text(info_x, info_y + 110, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Level:\n{self.level}")
     def load_from_json(self, data):
         # Load board
+        print("reading")
         json_board = data.get("board", [])
         for r in range(min(rows, len(json_board))):
             for c in range(min(cols, len(json_board[r]))):
