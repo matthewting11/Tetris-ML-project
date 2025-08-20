@@ -237,36 +237,31 @@ class TetrisGame:
     def update_block(self):
         global move,pieceid, tick_speed
         new_blocks = []
-        print((move["pieceid"]),move["rotation"],move["x"])
+        #print((move["pieceid"]),move["rotation"],move["x"])
         #if self.moves and self.move_index < len(self.moves):
          #       move = self.moves[self.move_index]
         for block in self.blocks:
             x,y = block
             new_x = x
             new_blocks.append([new_x,y])
-        if move["x"]>=5 and self.can_move_right==True:    
-            print("right")
+        if move["x"]>=5 and self.can_move_right(new_blocks)==True:    
 
 
-            while self.can_move_right(new_blocks)==True:   # set x position
+
+            while True:   # set x position
                 self.r()
-                self.update_screen()
-                new_blocks = []
-                if self.location[0] != move["x"] or self.can_move_right==False:
+                #new_blocks = []
+                if self.location[0] == move["x"] or self.can_move_right(new_blocks)==False:
                     break
 
         if move["x"]<5 and self.can_move_left==True:    
-            print("left")
-            new_blocks = []
-            for block in self.blocks:
-                x,y = block
-                new_x = x
-                new_blocks.append([new_x,y])
+
+
             while self.can_move_left(new_blocks)==True:   # set x position
                 self.l()
                 self.update_screen()
                 new_blocks = []
-                if self.location[0] != move["x"] or self.can_move_left==False:
+                if self.location[0] == move["x"] or self.can_move_left==False:
                     break
         
 
@@ -439,8 +434,7 @@ def main():
         for game in GAMES:
             game.update_screen()
             game.update_block()
-
-        root.after(300, tick_all_games)
+            root.after(800, tick_all_games)
 
     tick_all_games()
     root.mainloop()
