@@ -1,12 +1,15 @@
 import tkinter as tk
 import random
 import json
+import time
 
-cols = 10
-rows = 28  # updated from 20 to 28
+cols = 11
+rows = 26 # updated from 20 to 28
 INFO_PANEL_WIDTH = 80
 TOTAL_GAME_WIDTH = 300
 block_size = 16
+x_offset = cols * (cols * block_size + 80)
+y_offset = rows * (rows * block_size + 60)
 
 def piece_to_blocks(pieceid):
         pieces = {
@@ -47,168 +50,349 @@ def center_piece(pieceid):
             # Return the pivot point as a tuple (x, y). 
             
             return pivot
+  
 
-class Piece:
-    def __init__(self, pieceid=0):
-        self.pieceid = pieceid
+class TetrisGame:
+    def __init__(self,game_frame,game_width,game_height,r,c,moves, x_offset, y_offset,json_data=None,pieceid=0):
+        global gameover,move,board
+        gameover=False
+        
+        canvas_width = (cols * block_size + 100)
+        canvas_height = (rows * block_size + 60)
+        game_canvas = tk.Canvas(game_frame, width=game_width, height=game_height, bg="black")
+        self.canvas = game_canvas
+
+        self.x_offset = x_offset + INFO_PANEL_WIDTH  # Shift grid right for info panel
+        self.y_offset = y_offset
+        self.blocks = piece_to_blocks(self)
+        self.board = [[None for _ in range(cols)] for _ in range(rows)]
+        self.running = True
+
+        self.score = 0
+        self.lines = 0
+        self.level = 1
+        self.landed = False
+
+        self.moves = moves or []
+        self.move_index = 0
+        self.piece_placed = False
+        if self.moves and self.move_index < len(self.moves):
+            move = self.moves[self.move_index]
+            pieceid = (move["pieceid"])
         self.color = piece_color(pieceid)
+
         self.blocks = piece_to_blocks(pieceid)
         self.location = [cols // 2, 0]
         self.landed = False
         self.pivot = center_piece(pieceid)
 
+        
 
-    def rotate(self):
-        # Rotate the piece clockwise
-        new_blocks = []
-        for block in self.blocks:
-            x, y = block
-            new_x = -y + self.pivot[0] + self.pivot[1]
-            new_y = x - self.pivot[0] + self.pivot[1]
-            new_blocks.append([new_x, new_y])
-            self.blocks = new_blocks
-            return self.blocks
+        self.landed = False
+  
 
-class TetrisGame:
-    def __init__(self,canvas, x_offset, y_offset,json_data=None,moves=None):
-        canvas_width = (cols * block_size + 100)
-        canvas_height = (rows * block_size + 60)
-        #self.canvas = tk.Canvas(canvas, width=canvas_width, height=canvas_height, bg="black")
-        self.x_offset = x_offset + INFO_PANEL_WIDTH  # Shift grid right for info panel
-        self.y_offset = y_offset
-        self.board = [[None for _ in range(cols)] for _ in range(rows)]
-        self.current_piece = None
-        self.running = True
-        self.score = 0
-        self.lines = 0
-        self.level = 1
 
-        self.moves = moves or []
-        self.move_index = 0
-        self.piece_placed = True
-        if json_data:
-            pass
-        if not self.moves:
-            self.spawn_new_piece()
+        
 
-    def play_json_move(self, move):
-        # 1. Spawn the piece (ignores random bag)
-        self.current_piece = Piece(move["pieceid"])  
+        game_canvas.pack()
+            
+        game_canvas.create_text((cols * block_size+ INFO_PANEL_WIDTH)//2, 20, text=f"Game {r*NUM_COLS + c + 1}", fill="white", font=("Courier", 12, "bold"))
+    
 
-        # 2. Apply rotation
-        for _ in range(move["rotation"] % 4):
-            self.current_piece.rotate()
 
-        # 3. Move horizontally to target x
-        dx = move["x"] - self.current_piece.location[0]
-        self.current_piece.location[0] += dx
 
-        # 4. Hard drop until it lands
-        while self.can_move_down():
-            self.current_piece.location[1] += 1
-        self.lock_piece()
-    def place_piece_from_move(self, move):
-        # Create piece of given pieceid
-        self.current_piece = Piece(move["pieceid"])
 
-        # Rotate piece N times
-        for _ in range(move["rotation"]):
-            self.current_piece.rotate()
-
-        # Set piece horizontal location to move['x']
-        self.current_piece.location[0] = move["x"]
-        self.current_piece.location[1] = 0  # start at top row
-
-        # Drop piece immediately to lowest possible y
-        while self.can_move_down():
-            self.current_piece.location[1] += 1
-
-        # Step back one, because last move down was invalid
-        self.current_piece.location[1] -= 1
-
-        # Lock the piece into the board
-        self.lock_piece()
-
-    def can_move_down(self):
-        if self.current_piece is None:
-            return
-        for dx, dy in self.current_piece.blocks:
-            x = self.current_piece.location[0] + dx
-            y = self.current_piece.location[1] + dy + 1
-            if y >= rows or (0 <= x < cols and self.board[int(y)][int(x)] is not None):
+    def can_move_down(self,new_blocks):
+        global score, points_added
+        for x,y in new_blocks:
+            absx = int(x+self.location[0])
+            absy = int(y+self.location[1])
+            if absy>=25 or self.board[int(absy)+1][int(absx)] is not None:
+                if self.game_over_check():  # Check if the game is over
+                    self.write_final_score()
+                    running = False
+                    return  # Exit without spawning a new piece
                 return False
         return True
+    def can_move_left(self,new_blocks):
+        for x,y in new_blocks:
+            boundx = x+self.location[0]
+            boundy = y + self.location[1]
+            if boundx<=0 or self.board[int(boundy)][int(boundx-1)] is not None:
+                return False
+        return True
+    def can_move_right(self,new_blocks):
+        for x,y in new_blocks:
+            boundx = x+self.location[0]
+            boundy = y + self.location[1]
+            if boundx>=10 or self.board[int(boundy)][int(boundx+1)] is not None:
+                return False
+        return True
+    def game_over_check(self):
+        if self.landed:
+            for x,y in self.blocks:
+                if y + self.location[1] <= 4:
+                    return True
+        return False
+    def l(self):
+        #Move blocks left
+        new_blocks = []
+        for block in self.blocks:
+            x,y = block
+            new_x = x
+            new_blocks.append([new_x,y])
+        if self.can_move_left(new_blocks):
+            self.blocks = new_blocks
+            self.location[0] -= 1
+            return self.blocks
+        else:
+            return self.blocks
 
-    def lock_piece(self):
-        for dx, dy in self.current_piece.blocks:
-            x = self.current_piece.location[0] + dx
-            y = self.current_piece.location[1] + dy
-            if 0 <= x < cols and 0 <= y < rows:
-                self.board[int(y)][int(x)] = self.current_piece.color
-        self.clear_lines()
+    def r(self):
+        #Move blocks right
+        for x,y in self.blocks:
+            if x+1 >= 4:
+                return
+        new_blocks = []
+        for block in self.blocks:
+            x,y = block
+            new_x = x
+            new_blocks.append([new_x,y])
+        if self.can_move_right(new_blocks):    
+            self.blocks = new_blocks
+            self.location[0] += 1
+            return self.blocks
+        else:
+            return self.blocks
+    def rotate(self):
+            # Rotate the piece clockwise
+            new_blocks = []
+            for block in self.blocks:
+                x, y = block
+                new_x = -y + self.pivot[0] + self.pivot[1]
+                new_y = x - self.pivot[0] + self.pivot[1]
+                new_blocks.append([new_x, new_y])
+                self.blocks = new_blocks
+                return self.blocks
+    '''
+    def fix_piece(self):
+        self.offset_x, self.offset_y = self.location  # piece's position on the grid
+        for dx, dy in self.blocks:
+            col = int(dx + self.offset_x)
+            row = int(dy + self.offset_y)
+            if 0 <= row < rows and 0 <= col < cols:
+                self.board[row][col] = self.color
+            self.update_screen()
+          '''
+
+
+    def fix_piece(self):
+        offset_x, offset_y = self.location  # piece's position on the grid
+        for dx, dy in self.blocks:
+            col = int(dx + offset_x)
+            row = int(dy + offset_y)
+            if 0 <= row < rows and 0 <= col < cols:
+                self.board[row][col] = self.color
+        self.update_screen()
+
 
     def clear_lines(self):
-        new_board = [row for row in self.board if any(cell is None for cell in row)]
-        cleared = rows - len(new_board)
-        if cleared:
-            self.lines += cleared
-            self.score += (cleared ** 2) * 100
-            self.level = self.lines // 10 + 1
-            for _ in range(cleared):
-                new_board.insert(0, [None for _ in range(cols)])
-            self.board = new_board
+        global board, level, points_added, tick_speed
+        new_board = []
+        lines_cleared = 0
+        points_added = 0
 
-    def update(self):
-        if self.current_piece is None:
-            return
-        if self.can_move_down():
-            self.current_piece.location[1] += 1
-        else:
-            self.lock_piece()
-            self.spawn_new_piece()
+        for row in self.board:
+            if all(cell is not None for cell in row):
+                lines_cleared += 1  # Full row, will be cleared
+            else:
+                new_board.append(row)
+
+        # Add empty rows at the top for each cleared line
+        for _ in range(lines_cleared):
+            new_board.insert(0, [None for _ in range(cols)])
+
+        self.board = new_board
+
+        # Update totals and scoring
+        self.lines += lines_cleared
+        self.level = 1 + lines_cleared // 10
+
+        if lines_cleared == 1:
+            points_added = 40 * self.level
+        elif lines_cleared == 2:
+            points_added = 100 * self.level
+        elif lines_cleared == 3:
+            points_added = 300 * self.level
+        elif lines_cleared == 4:
+            points_added = 1200 * self.level
+        
+        tick_speed = self.get_tick_speed()
+
+        return points_added
+    
+    def get_tick_speed(self):
+            speeds = [ 720, 630, 550, 470, 380, 300, 220, 130, 100, 80,  70,  50,  30,  20,  17]
+            return int(speeds[min(self.level-1,len(speeds)-1)])
+    def update_block(self):
+        global move,pieceid, tick_speed
+        new_blocks = []
+        print((move["pieceid"]),move["rotation"],move["x"])
+        #if self.moves and self.move_index < len(self.moves):
+         #       move = self.moves[self.move_index]
+        for block in self.blocks:
+            x,y = block
+            new_x = x
+            new_blocks.append([new_x,y])
+        if move["x"]>=5 and self.can_move_right==True:    
+            print("right")
+
+
+            while self.can_move_right(new_blocks)==True:   # set x position
+                self.r()
+                self.update_screen()
+                new_blocks = []
+                if self.location[0] != move["x"] or self.can_move_right==False:
+                    break
+
+        if move["x"]<5 and self.can_move_left==True:    
+            print("left")
+            new_blocks = []
+            for block in self.blocks:
+                x,y = block
+                new_x = x
+                new_blocks.append([new_x,y])
+            while self.can_move_left(new_blocks)==True:   # set x position
+                self.l()
+                self.update_screen()
+                new_blocks = []
+                if self.location[0] != move["x"] or self.can_move_left==False:
+                    break
+        
+
+        # apply rotation
+        for _ in range(move["rotation"]):
+            self.rotate()
+        
+        for block in self.blocks:
+            x,y = block
+            new_blocks.append([x,y])
+        tick_speed = int(self.get_tick_speed())
+        if self.can_move_down(new_blocks)== True:
+            self.blocks = new_blocks
+
+            self.location[1] += 1
+            self.update_screen()
+            self.canvas.after(tick_speed, self.update_block)
+            self.lock_time = 0
+        
+        elif self.can_move_down(new_blocks) == False :
+            if self.lock_time == 0:
+                self.lock_time = time.time()
+            elif float(time.time()) - float(self.lock_time) >= tick_speed/1000:
+                self.landed = True
+                if self.game_over_check():  # Check if the game is over
+                    gameover = True
+                    self.write_final_score()
+                    return  # Exit without spawning a new piece
+                self.fix_piece()
+                self.clear_lines()
+                self.score+=points_added
+                self.spawn_new_piece()
+            self.update_screen()
+            self.canvas.after(self.get_tick_speed(), self.update_block)
+   
     def spawn_new_piece(self):
-        self.current_piece = Piece(random.randint(1, 7))
+        global pieceid,move
+        self.move_index += 1
+        
+        if self.moves and self.move_index < len(self.moves):
+            move = self.moves[self.move_index]
+        pieceid = (move["pieceid"])
+        self.blocks = piece_to_blocks(pieceid)
+        self.color = piece_color(pieceid)
+        self.update_screen()
+        self.location=[5,0]
 
-    def render(self):
-        if self.current_piece is None:
+
+
+            
+
+    
+
+
+    def write_final_score(self):
+        if gameover==True:  # Only write if the game is over
+            info_x = 5  # position of info panel (adjust if needed)
+            info_y = 150  # below the score/lines/level text
+            self.canvas.create_text(
+                info_x,
+                info_y,
+                anchor="nw",
+                fill="red",
+                font=("Courier", 12, "bold"),
+                text=f"Game Over!\nFinal Score: {self.score}"
+            )
+  
+    def update_screen(self):
+        global gameover
+        if not gameover:
+            self.canvas.delete("all")
+            self.draw_grid()
+            self.draw_info()
+            for row in range(rows):
+                for col in range(cols):
+                    color = self.board[row][col]
+                    if color:
+                        x = self.x_offset + col * block_size
+                        y = self.y_offset + row * block_size
+                        self.draw_block(x,y,self.color)
+            if True:
+                self.draw_piece()
+
+    def start_game(self):
+        global board, gameover
+        if pieceid is None:
             return
-        self.draw_info()
+        gameover = False
         self.draw_grid()
-        self.draw_board()
-        self.draw_piece()
-
-    def draw_grid(self):
-        for r in range(rows):
-            for c in range(cols):
-                x = self.x_offset + c * block_size
-                y = self.y_offset + r * block_size
-                self.draw_block(x, y, "black")
-
-    def draw_board(self):
-        for r in range(NUM_ROWS):
-            for c in range(NUM_COLS):
-                color = self.board[r][c]
-                if color:
-                    x = c * block_size
-                    y = r * block_size
-                    self.canvas.create_rectangle(x, y, x + block_size, y + block_size, fill=color, outline="white")
+        self.draw_info()
+        self.update_block()
+        self.update_screen()
 
     def draw_piece(self):
-        for dx, dy in self.current_piece.blocks:
-            x = self.x_offset + (self.current_piece.location[0] + dx) * block_size
-            y = self.y_offset + (self.current_piece.location[1] + dy) * block_size
-            self.draw_block(x, y, self.current_piece.color)
+        for dx, dy in self.blocks:
+            x = self.x_offset + (self.location[0] + dx) * block_size
+            y = self.y_offset + (self.location[1] + dy) * block_size
+            self.draw_block(x, y, self.color)
+
+    def draw_info(self):
+            info_x = self.x_offset - INFO_PANEL_WIDTH + 5
+            info_y = self.y_offset
+
+            self.canvas.create_text(info_x, info_y + 10, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Score:\n{self.score}")
+            self.canvas.create_text(info_x, info_y + 60, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Lines:\n{self.lines}")
+            self.canvas.create_text(info_x, info_y + 110, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Level:\n{self.level}")
+    def draw_board(self):
+        self.canvas.delete("all")
+        for y, row in enumerate(board):
+            for x, cell in enumerate(row):
+                if cell:
+                    self.canvas.create_rectangle(
+                        x*block_size, y*block_size,
+                        (x+1)*block_size, (y+1)*block_size,
+                        fill="cyan", outline="gray"
+                    )
+
+    def draw_grid(self):
+                for r in range(rows):
+                    for c in range(cols):
+                        x = self.x_offset + c * block_size
+                        y = self.y_offset + r * block_size
+                        self.draw_block(x, y, "black")
 
     def draw_block(self, x, y, color):
         self.canvas.create_rectangle(x, y, x + block_size, y + block_size, fill=color, outline="white")
-'''
-    def draw_info(self):
-        info_x = self.x_offset - INFO_PANEL_WIDTH + 5
-        info_y = self.y_offset
-        self.canvas.create_text(info_x, info_y + 10, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Score:\n{self.score}")
-        self.canvas.create_text(info_x, info_y + 60, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Lines:\n{self.lines}")
-        self.canvas.create_text(info_x, info_y + 110, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Level:\n{self.level}")
-'''
 
 
 NUM_ROWS = 2
@@ -221,59 +405,46 @@ def main():
     window = tk.Toplevel(root)
     window.title("Multi Tetris AI Arena")
     
-    canvas_width = NUM_COLS * (cols * block_size + 100)
-    canvas_height = NUM_ROWS * (rows * block_size + 60)
-    canvas = tk.Canvas(window, width=canvas_width, height=canvas_height, bg="black")
-    game = TetrisGame(canvas, x_offset=0, y_offset=0)
-    canvas.pack()
-
+    window_width = NUM_COLS * (cols * block_size + 100)
+    window_height = NUM_ROWS * (rows * block_size + 60)
+    #BIG FRAME TO HOLD ALL GAMES
+    games_frame = tk.Frame(window, bg="gray")    
+    games_frame.pack(padx=20,pady=20)
+    canvases = []
     # Load the JSON file for the top-left game
-    try:
-        with open("C:/Users\matth\OneDrive\Documents\GitHub\Tetris-ML-project\generation_0_sample_0_moves.json", "r") as f:
-            moves = json.load(f)
-    except Exception as e:
-        print("Error loading JSON:", e)
-        moves = None
 
-    for row in range(NUM_ROWS):
-        for col in range(NUM_COLS):
-            x_offset = col * (cols * block_size + 80)
-            y_offset = row * (rows * block_size + 60)
+    for r in range(NUM_ROWS):
+        for c in range(NUM_COLS):
+            #CANVAS FOR EACH GAME
+            game_frame = tk.Frame(games_frame, bg="black")
+            game_frame.grid(row=r, column=c, padx=10, pady=10)  # place in grid inside frame
             game_width = cols * block_size + INFO_PANEL_WIDTH
             game_height = rows * block_size
-            game_canvas = tk.Canvas(root, width=game_width, height=game_height, bg="black")
-            game_canvas.place(x=x_offset, y=y_offset)  # position canvas
-            game = TetrisGame(root, x_offset=0, y_offset=0)
-            if row == 0 and col == 0:
-                game.moves = moves
+            
+            
+            if r == 0 and c == 0:
+                with open("C:/Users\matth\OneDrive\Documents\GitHub\Tetris-ML-project\generation_0_sample_0_moves.json", "r") as f:
+                    moves = json.load(f)
+                game = TetrisGame(game_frame, game_width,game_height,r,c, x_offset=0, y_offset=0,moves=moves)
+                
             else:
-                game.moves = None
+                moves = None
+                game = TetrisGame(game_frame, game_width,game_height,r,c, x_offset=0, y_offset=0,moves=moves)
             GAMES.append(game)
-            print(f"Game {len(GAMES)} canvas:", game_canvas)
-            info_x = x_offset - INFO_PANEL_WIDTH + 5
-            info_y = y_offset
-            score = 0
-            lines = 0
-            level = 1
-            canvas.create_text(info_x, info_y + 10, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Score:\n{score}")
-            canvas.create_text(info_x, info_y + 60, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Lines:\n{lines}")
-            canvas.create_text(info_x, info_y + 110, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Level:\n{level}")
+    #window.geometry(f"{window_width}x{window_height}")
+    #window.mainloop()
+
 
     def tick_all_games():
-        canvas.delete("all")
         for game in GAMES:
-            if game.moves:
-                if game.moves:    
-                    move = game.moves.pop(0)
-                    game.play_json_move(move)
-                else:
-                    game.update()
-            
-            game.render()
-        window.after(300, tick_all_games)
+            game.update_screen()
+            game.update_block()
+
+        root.after(300, tick_all_games)
 
     tick_all_games()
     root.mainloop()
+    
 
 if __name__ == '__main__':
     main()
