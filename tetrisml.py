@@ -377,6 +377,7 @@ def update_block():
                 clear_lines()
                 score+=points_added
                 spawn_new_piece()
+            tick_speed = int(get_tick_speed(level))
             update_screen()
             root.after(get_tick_speed(level), update_block)
 

@@ -233,7 +233,9 @@ class TetrisGame:
     
     def get_tick_speed(self):
             speeds = [ 720, 630, 550, 470, 380, 300, 220, 130, 100, 80,  70,  50,  30,  20,  17]
+            print(self.level)
             return int(speeds[min(self.level-1,len(speeds)-1)])
+    
     def update_block(self):
         global move,pieceid, tick_speed
         new_blocks = []
@@ -250,6 +252,7 @@ class TetrisGame:
 
             while True:   # set x position
                 self.r()
+                self.update_screen()
                 #new_blocks = []
                 if self.location[0] == move["x"] or self.can_move_right(new_blocks)==False:
                     break
@@ -260,7 +263,7 @@ class TetrisGame:
             while self.can_move_left(new_blocks)==True:   # set x position
                 self.l()
                 self.update_screen()
-                new_blocks = []
+                #new_blocks = []
                 if self.location[0] == move["x"] or self.can_move_left==False:
                     break
         
@@ -282,6 +285,8 @@ class TetrisGame:
             self.lock_time = 0
         
         elif self.can_move_down(new_blocks) == False :
+            tick_speed = int(self.get_tick_speed())
+
             if self.lock_time == 0:
                 self.lock_time = time.time()
             elif float(time.time()) - float(self.lock_time) >= tick_speed/1000:
@@ -295,7 +300,7 @@ class TetrisGame:
                 self.score+=points_added
                 self.spawn_new_piece()
             self.update_screen()
-            self.canvas.after(self.get_tick_speed(), self.update_block)
+            self.canvas.after(tick_speed, self.update_block)
    
     def spawn_new_piece(self):
         global pieceid,move
@@ -308,12 +313,6 @@ class TetrisGame:
         self.color = piece_color(pieceid)
         self.update_screen()
         self.location=[5,0]
-
-
-
-            
-
-    
 
 
     def write_final_score(self):
@@ -352,8 +351,8 @@ class TetrisGame:
         gameover = False
         self.draw_grid()
         self.draw_info()
-        self.update_block()
         self.update_screen()
+        #self.update_block()
 
     def draw_piece(self):
         for dx, dy in self.blocks:
@@ -370,7 +369,7 @@ class TetrisGame:
             self.canvas.create_text(info_x, info_y + 110, anchor="nw", fill="white", font=("Courier", 10, "bold"), text=f"Level:\n{self.level}")
     def draw_board(self):
         self.canvas.delete("all")
-        for y, row in enumerate(board):
+        for y, row in enumerate(self.board):
             for x, cell in enumerate(row):
                 if cell:
                     self.canvas.create_rectangle(
@@ -432,9 +431,9 @@ def main():
 
     def tick_all_games():
         for game in GAMES:
-            game.update_screen()
+            #game.update_screen()
             game.update_block()
-            root.after(800, tick_all_games)
+            #root.after(800)
 
     tick_all_games()
     root.mainloop()
