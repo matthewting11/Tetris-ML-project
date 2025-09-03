@@ -54,7 +54,7 @@ def center_piece(pieceid):
 
 class TetrisGame:
     def __init__(self,game_frame,game_width,game_height,r,c,moves, x_offset, y_offset,json_data=None,pieceid=0):
-        global gameover,move,board
+        global gameover,move
         gameover=False
         
         canvas_width = (cols * block_size + 100)
@@ -72,10 +72,11 @@ class TetrisGame:
         self.lines = 0
         self.level = 1
         self.landed = False
-
+        self.lock_time = 0
         self.moves = moves or []
-        self.move_index = 0
+        self.move_index = -1
         self.piece_placed = False
+        
         if self.moves and self.move_index < len(self.moves):
             move = self.moves[self.move_index]
             pieceid = (move["pieceid"])
@@ -86,7 +87,7 @@ class TetrisGame:
         self.landed = False
         self.pivot = center_piece(pieceid)
 
-        
+        self.spawn_new_piece(pieceid)        
 
         self.landed = False
   
@@ -175,8 +176,11 @@ class TetrisGame:
                 self.blocks = new_blocks
                 return self.blocks
     def hard(self):
-        global points_added, score, gameover
+        global points_added, score, gameover,move,pieceid
         #harddrop block on lowest possible level:
+        if self.moves and self.move_index < len(self.moves):
+            move = self.moves[self.move_index]
+            pieceid = (move["pieceid"])
         if gameover is None:
             return
         for x,y in self.blocks:
@@ -196,7 +200,8 @@ class TetrisGame:
         self.clear_lines()
         self.score += points_added
         self.update_screen()
-        self.spawn_new_piece()
+        print(pieceid)
+        self.spawn_new_piece(pieceid)
     '''
     def fix_piece(self):
         self.offset_x, self.offset_y = self.location  # piece's position on the grid
@@ -263,7 +268,7 @@ class TetrisGame:
             return int(speeds[min(self.level-1,len(speeds)-1)])
     
     def update_block(self):
-        global move,pieceid, tick_speed
+        global move,pieceid, tick_speed, lock_time
         new_blocks = []
         #print((move["pieceid"]),move["rotation"],move["x"])
         #if self.moves and self.move_index < len(self.moves):
@@ -293,7 +298,6 @@ class TetrisGame:
                 if self.location[0] == move["x"] or self.can_move_left==False:
                     break
         if move["x"]==5:
-            print("5")
             self.blocks = new_blocks
             self.hard()
             self.update_screen()
@@ -330,16 +334,25 @@ class TetrisGame:
             self.update_screen()
             self.canvas.after(tick_speed, self.update_block)
    
-    def spawn_new_piece(self):
-        global pieceid,move
+    def spawn_new_piece(self,pieceid):
+        global move
+        gameover = False
+        self.draw_grid()
+        self.draw_info()
+        self.update_screen()
         self.move_index += 1
         
         if self.moves and self.move_index < len(self.moves):
             move = self.moves[self.move_index]
+        '''
         pieceid = (move["pieceid"])
+        
         self.blocks = piece_to_blocks(pieceid)
         self.color = piece_color(pieceid)
         self.location=[5,0]
+        '''
+        print("index",self.move_index)
+        print("id",pieceid)
         self.update_screen()
         
 
@@ -371,16 +384,6 @@ class TetrisGame:
                         self.draw_block(x,y,self.color)
             if True:
                 self.draw_piece()
-
-    def start_game(self):
-        global board, gameover
-        if pieceid is None:
-            return
-        gameover = False
-        self.draw_grid()
-        self.draw_info()
-        self.update_screen()
-        #self.update_block()
 
     def draw_piece(self):
         for dx, dy in self.blocks:
@@ -459,7 +462,7 @@ def main():
 
     def tick_all_games():
         for game in GAMES:
-            #game.update_screen()
+            game.update_screen()
             game.update_block()
             #root.after(800)
 
