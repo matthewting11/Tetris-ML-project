@@ -174,6 +174,29 @@ class TetrisGame:
                 new_blocks.append([new_x, new_y])
                 self.blocks = new_blocks
                 return self.blocks
+    def hard(self):
+        global points_added, score, gameover
+        #harddrop block on lowest possible level:
+        if gameover is None:
+            return
+        for x,y in self.blocks:
+            new_blocks = []
+        for block in self.blocks:
+            x,y = block
+            new_y = y
+            new_blocks.append([x,new_y])
+        while self.can_move_down(new_blocks):
+            self.blocks = new_blocks
+            self.location[1]+=1
+        self.landed = True
+        if self.game_over_check():  # Check if the game is over
+            gameover = True
+            return  # Exit without spawning a new piece
+        self.fix_piece()
+        self.clear_lines()
+        self.score += points_added
+        self.update_screen()
+        self.spawn_new_piece()
     '''
     def fix_piece(self):
         self.offset_x, self.offset_y = self.location  # piece's position on the grid
@@ -191,8 +214,12 @@ class TetrisGame:
         for dx, dy in self.blocks:
             col = int(dx + offset_x)
             row = int(dy + offset_y)
+            current_color = []
             if 0 <= row < rows and 0 <= col < cols:
-                self.board[row][col] = self.color
+                current_color.append(self.color)
+                
+                self.board[row][col] = current_color
+                
         self.update_screen()
 
 
@@ -233,7 +260,6 @@ class TetrisGame:
     
     def get_tick_speed(self):
             speeds = [ 720, 630, 550, 470, 380, 300, 220, 130, 100, 80,  70,  50,  30,  20,  17]
-            print(self.level)
             return int(speeds[min(self.level-1,len(speeds)-1)])
     
     def update_block(self):
@@ -246,7 +272,7 @@ class TetrisGame:
             x,y = block
             new_x = x
             new_blocks.append([new_x,y])
-        if move["x"]>=5 and self.can_move_right(new_blocks)==True:    
+        if move["x"]>5 and self.can_move_right(new_blocks)==True:    
 
 
 
@@ -266,7 +292,11 @@ class TetrisGame:
                 #new_blocks = []
                 if self.location[0] == move["x"] or self.can_move_left==False:
                     break
-        
+        if move["x"]==5:
+            print("5")
+            self.blocks = new_blocks
+            self.hard()
+            self.update_screen()
 
         # apply rotation
         for _ in range(move["rotation"]):
@@ -278,10 +308,8 @@ class TetrisGame:
         tick_speed = int(self.get_tick_speed())
         if self.can_move_down(new_blocks)== True:
             self.blocks = new_blocks
-
-            self.location[1] += 1
+            self.hard()
             self.update_screen()
-            self.canvas.after(tick_speed, self.update_block)
             self.lock_time = 0
         
         elif self.can_move_down(new_blocks) == False :
@@ -311,9 +339,9 @@ class TetrisGame:
         pieceid = (move["pieceid"])
         self.blocks = piece_to_blocks(pieceid)
         self.color = piece_color(pieceid)
-        self.update_screen()
         self.location=[5,0]
-
+        self.update_screen()
+        
 
     def write_final_score(self):
         if gameover==True:  # Only write if the game is over
