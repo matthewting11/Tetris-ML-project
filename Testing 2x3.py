@@ -101,7 +101,8 @@ class TetrisGame:
     def can_move_down(self,new_blocks):
         global score, points_added
         for x,y in new_blocks:
-            absx = int(x+self.location[0])
+            absx = int(self.location[0])
+            print(absx,self.location[0])
             absy = int(y+self.location[1])
             if absy>=25 or self.board[int(absy)+1][int(absx)] is not None:
                 if self.game_over_check():  # Check if the game is over
@@ -184,6 +185,7 @@ class TetrisGame:
             x,y = block
             new_y = y
             new_blocks.append([x,new_y])
+        print(pieceid,self.location)
         while self.can_move_down(new_blocks):
             self.blocks = new_blocks
             self.location[1]+=1
@@ -275,7 +277,7 @@ class TetrisGame:
 
 
 
-            while self.can_move_right==True:   # set x position
+            while self.can_move_right(new_blocks)==True:   # set x position
                 if self.location[0] == move["x"] or self.can_move_right(new_blocks)==False:
                     break
                 self.r()
@@ -287,7 +289,7 @@ class TetrisGame:
 
 
             while self.can_move_left(new_blocks)==True:   # set x position
-                if self.location[0] == move["x"] or self.can_move_left==False:
+                if self.location[0] == move["x"] or self.can_move_left(new_blocks)==False:
                     break
                 self.l()
                 self.update_screen()
@@ -298,6 +300,7 @@ class TetrisGame:
             for _ in range(move["rotation"]):
                 self.rotate()
             self.hard()
+            return
 
         # apply rotation
         for _ in range(move["rotation"]):
@@ -383,8 +386,8 @@ class TetrisGame:
                         y = self.y_offset + row * block_size
                         self.draw_block(x,y,self.color)
             if True:
-                print("index",self.move_index)
-                print("id",pieceid)
+                #print("index",self.move_index)
+                #print("id",pieceid)
                 self.draw_piece()
 
     def draw_piece(self):
