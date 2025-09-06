@@ -124,6 +124,13 @@ class TetrisGame:
             if boundx>=10 or self.board[int(boundy)][int(boundx+1)] is not None:
                 return False
         return True
+    def can_rotate(self,new_blocks):
+        for x,y in new_blocks:
+            boundx = x + self.location[0]
+            boundy = y + self.location[1]
+            if boundx>=11 or boundx<=-1 or boundy>=26 or self.board[int(boundy)][int(boundx)] is not None:
+                return False
+        return True
     def game_over_check(self):
         if self.landed:
             for x,y in self.blocks:
@@ -161,15 +168,19 @@ class TetrisGame:
         else:
             return self.blocks
     def rotate(self):
-            # Rotate the piece clockwise
-            new_blocks = []
-            for block in self.blocks:
-                x, y = block
-                new_x = -y + self.pivot[0] + self.pivot[1]
-                new_y = x - self.pivot[0] + self.pivot[1]
-                new_blocks.append([new_x, new_y])
-                                
+        # Rotate the piece clockwise
+        print("rotated")
+        new_blocks = []
+        for block in self.blocks:
+            x, y = block
+            new_x = -y + self.pivot[0] + self.pivot[1]
+            new_y = x - self.pivot[0] + self.pivot[1]
+            new_blocks.append([new_x, new_y])
+        if self.can_rotate(new_blocks):
+            self.blocks = new_blocks
             return new_blocks
+        else:
+            return self.blocks
     def hard(self):
         global points_added, score, gameover,move,pieceid
         #harddrop block on lowest possible level:
@@ -286,7 +297,9 @@ class TetrisGame:
             new_blocks.append([new_x,y])
         if move["x"]>5:
             for _ in range(move["rotation"]):
-                self.rotate()
+                if self.can_rotate(new_blocks):
+                    self.rotate()
+                    #self.update_screen()
             
             while self.can_move_right(new_blocks)==True:   # set x position
                 self.r()
@@ -306,8 +319,9 @@ class TetrisGame:
             self.update_block()
         elif move["x"]<5:
             for _ in range(move["rotation"]):
-                self.rotate()
-            
+                if self.can_rotate(new_blocks):
+                    self.rotate()
+                    #self.update_screen()
             while self.can_move_left(new_blocks)==True:   # set x position
                 
                 self.l()
@@ -328,7 +342,9 @@ class TetrisGame:
 
         elif move["x"]==5:
             for _ in range(move["rotation"]):
-                self.rotate()
+                if self.can_rotate(new_blocks):
+                    self.rotate()
+                    #self.update_screen()
             
             self.hard()
             self.update_screen()
