@@ -237,14 +237,15 @@ class piece:
             current_piece.blocks = new_blocks
             current_piece.location[1]+=1
         current_piece.landed = True
-        if current_piece.game_over_check():  # Check if the game is over
-            gameover = True
-            draw_game_over()
-            return  # Exit without spawning a new piece
+        
         current_piece.fix_piece()
         clear_lines()
         score += points_added
         update_screen()
+        if current_piece.game_over_check():  # Check if the game is over
+            gameover = True
+            draw_game_over()
+            return  # Exit without spawning a new piece
         spawn_new_piece()
 
     def fix_piece(self):
