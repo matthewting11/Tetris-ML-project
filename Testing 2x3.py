@@ -66,7 +66,7 @@ class TetrisGame:
         self.x_offset = x_offset + INFO_PANEL_WIDTH  # Shift grid right for info panel
         self.y_offset = y_offset
         self.blocks = piece_to_blocks(self)
-        self.board = [[None for _ in range(cols)] for _ in range(rows)]
+        self.board = [[None for _ in range(11)] for _ in range(29)]
         self.running = True
 
         self.score = 0
@@ -85,7 +85,7 @@ class TetrisGame:
 
         self.spawn_new_piece()        
         self.landed = False
-  
+
 
 
         
@@ -128,7 +128,7 @@ class TetrisGame:
         for x,y in new_blocks:
             boundx = x + self.location[0]
             boundy = y + self.location[1]
-            if boundx>=11 or boundx<=-1 or boundy>=26 or self.board[int(boundy)][int(boundx)] is not None:
+            if boundx>=11 or boundx<=-1 or boundy>=26 or self.board[int(boundy)][int(boundx+1)] is not None:
                 return False
         return True
     def game_over_check(self):
@@ -145,31 +145,33 @@ class TetrisGame:
             new_x = x
             new_blocks.append([new_x,y])
         if self.can_move_left(new_blocks):
-            self.blocks = new_blocks
+            
             self.location[0] -= 1
+            self.blocks = new_blocks
             return self.blocks
         else:
             return self.blocks
 
     def r(self):
         #Move blocks right
-        for x,y in self.blocks:
-            if x+1 >= 4:
-                return
         new_blocks = []
         for block in self.blocks:
             x,y = block
             new_x = x
             new_blocks.append([new_x,y])
         if self.can_move_right(new_blocks):    
-            self.blocks = new_blocks
             self.location[0] += 1
+            self.blocks = new_blocks
             return self.blocks
         else:
             return self.blocks
     def rotate(self):
+        global gameover
         # Rotate the piece clockwise
-        print("rotated")
+        if self.game_over_check():  # Check if the game is over
+            gameover = True
+            self.write_final_score()
+            return  # Exit without spawning a new piece
         new_blocks = []
         for block in self.blocks:
             x, y = block
@@ -178,8 +180,10 @@ class TetrisGame:
             new_blocks.append([new_x, new_y])
         if self.can_rotate(new_blocks):
             self.blocks = new_blocks
-            return new_blocks
+            return self.blocks
+        
         else:
+            print("couldnt")
             return self.blocks
     def hard(self):
         global points_added, score, gameover,move,pieceid
@@ -286,7 +290,7 @@ class TetrisGame:
             return int(speeds[min(self.level-1,len(speeds)-1)])
     
     def update_block(self):
-        global move,pieceid, tick_speed, lock_time
+        global move,pieceid, tick_speed, lock_time, gameover
         if gameover==True:
             return
         new_blocks = []
@@ -299,11 +303,15 @@ class TetrisGame:
             for _ in range(move["rotation"]):
                 if self.can_rotate(new_blocks):
                     self.rotate()
-                    #self.update_screen()
+                    self.update_screen()
+                    if self.game_over_check():  # Check if the game is over
+                        gameover = True
+                        self.write_final_score()
+                        return  # Exit without spawning a new piece
             
             while self.can_move_right(new_blocks)==True:   # set x position
                 self.r()
-                if self.location[0] == move["x"] or self.can_move_right(new_blocks)==False:
+                if self.location[0] == move["x"] or self.can_move_right(self.blocks)==False:
                     self.hard()
                     break
             
@@ -321,11 +329,15 @@ class TetrisGame:
             for _ in range(move["rotation"]):
                 if self.can_rotate(new_blocks):
                     self.rotate()
-                    #self.update_screen()
+                    self.update_screen()
+                    if self.game_over_check():  # Check if the game is over
+                        gameover = True
+                        self.write_final_score()
+                        return  # Exit without spawning a new piece
             while self.can_move_left(new_blocks)==True:   # set x position
                 
                 self.l()
-                if self.location[0] == move["x"] or self.can_move_left(new_blocks)==False:
+                if self.location[0] == move["x"] or self.can_move_left(self.blocks)==False:
                     self.hard()
                     break
 
@@ -342,15 +354,19 @@ class TetrisGame:
 
         elif move["x"]==5:
             for _ in range(move["rotation"]):
-                if self.can_rotate(new_blocks):
+                if True:#self.can_rotate(new_blocks):
                     self.rotate()
-                    #self.update_screen()
+                    self.update_screen()
+                    if self.game_over_check():  # Check if the game is over
+                        gameover = True
+                        self.write_final_score()
+                        return  # Exit without spawning a new piece
             
             self.hard()
             self.update_screen()
             #self.spawn_new_piece()
             self.update_block()
-
+        
 
         '''
         elif self.can_move_down(new_blocks) == False :
@@ -386,7 +402,6 @@ class TetrisGame:
             #print("change")
         self.landed = False
         self.pivot = center_piece(pieceid)
-        #print( self.move_index,pieceid, move["rotation"],move["x"])
         
         self.blocks = piece_to_blocks(pieceid)
         color = piece_color(pieceid)
@@ -433,8 +448,6 @@ class TetrisGame:
                         y = self.y_offset + row * block_size
                         self.draw_block(x,y,color)
             if True:
-                #print("index",self.move_index)
-                #print("id",pieceid)
                 self.draw_piece()
                 
 
@@ -465,7 +478,7 @@ class TetrisGame:
                     )
     '''
     def draw_grid(self):
-                for r in range(rows):
+                for r in range(-2,rows):
                     for c in range(cols):
                         x = self.x_offset + c * block_size
                         y = self.y_offset + r * block_size
@@ -497,7 +510,7 @@ def main():
         root = tk.Tk()
         root.withdraw()
         window = tk.Toplevel(root)
-        window.title("Multi Tetris AI Arena"+str(batches_ran+1))
+        window.title("Multi Tetris AI Arena "+str(batches_ran+1))
 
         #BIG FRAME TO HOLD ALL GAMES
         games_frame = tk.Frame(window, bg="gray")    
@@ -523,7 +536,7 @@ def main():
                 game_index+=1
         is_whole = ((game_index/7) % 1) == 0
         if is_whole==True:
-            window.after(2000)
+            
             print("next")
             batches_ran+=1
                 

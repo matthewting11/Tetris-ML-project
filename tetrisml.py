@@ -269,7 +269,7 @@ def start_game():
 
     random_piece_id = random.randint(1,7)
     current_piece = piece(pieceid=random_piece_id)
-    
+    print(len(board))
     draw_grid()
     draw_game_UI()    
     update_screen()
